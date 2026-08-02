@@ -100,15 +100,45 @@ class CartLines extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{productId};
 }
 
-@DriftDatabase(tables: <Type>[CachedCategories, CachedProducts, CacheEntries, CartLines])
+/// Cached order history (FR-057, T108).
+///
+/// User-scoped and re-fetchable — the opposite of the cart on both counts. It is cached so
+/// history is readable with no connection (Principle VI), and it is purged at sign-out so the
+/// next person to use the device cannot read the previous one's orders (FR-016).
+///
+/// The summary is stored flattened rather than as raw JSON: the screen sorts by date and shows
+/// a total, and a store that cannot answer "newest first" without deserialising every row is
+/// the key-value design research D7 rejected.
+class CachedOrders extends Table {
+  TextColumn get id => text()();
+  TextColumn get orderNumber => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get totalMinor => integer()();
+  TextColumn get currency => text()();
+  TextColumn get currentStage => text()();
+  IntColumn get itemCount => integer()();
+  TextColumn get thumbnailUrl => text().nullable()();
+
+  /// Position in the server's ordering, so a cached page replays in the order it arrived.
+  IntColumn get position => integer()();
+  DateTimeColumn get fetchedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+@DriftDatabase(
+  tables: <Type>[CachedCategories, CachedProducts, CacheEntries, CartLines, CachedOrders],
+)
 class CacheDatabase extends _$CacheDatabase {
   CacheDatabase(super.executor);
 
   /// Bump on **any** schema change. There are no incremental migrations by design.
   ///
   /// 2: added `cart_lines` (US3).
+  /// 3: added `cached_orders` (US5).
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -137,6 +167,7 @@ class CacheDatabase extends _$CacheDatabase {
   /// unclassified: it fails the suite until somebody decides which side it is on.
   List<TableInfo<Table, Object?>> get userScopedTables => <TableInfo<Table, Object?>>[
         cartLines,
+        cachedOrders,
       ];
 
   /// Tables holding public data, which survives sign-out.

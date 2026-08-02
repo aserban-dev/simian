@@ -25,11 +25,12 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import literal, select, tuple_
 from sqlalchemy.orm import Session
 
 from ..models import Address, AppUser, Order, OrderItem, Product
 from ..schemas.orders import DemoCardId
+from .cursor import Cursor, InvalidCursor
 from .delivery import Timeline, current_stage_at, delivery_timeline, nearest_warehouse
 from .presentation import cdn_url, discounted_minor, localise
 
@@ -138,6 +139,71 @@ def find_existing_order(session: Session, user: AppUser, key: str | None) -> Ord
     return session.scalar(
         select(Order).where(Order.user_id == user.id, Order.idempotency_key == key)
     )
+
+
+ORDER_HISTORY_SORT = "order_newest"
+
+
+def list_orders(
+    session: Session,
+    user: AppUser,
+    cursor: Cursor | None,
+    limit: int,
+) -> tuple[Sequence[Order], bool]:
+    """A page of the caller's history, newest first (FR-031).
+
+    Keyset, not offset (research D3). The key is the pair `(created_at, id)`, not `created_at`
+    alone: two orders placed in the same second are ordinary — a double-tap produces them — and
+    with a single-column key one of them is served on two consecutive pages while the other is
+    never served at all. The id breaks the tie, and it is unique, so the ordering is total.
+
+    `user_id` is in the WHERE clause rather than checked afterwards, so a cursor lifted from
+    another user's response is a position in *this* user's history and cannot reach their rows.
+    """
+    query = (
+        select(Order)
+        .where(Order.user_id == user.id)
+        .order_by(Order.created_at.desc(), Order.id.desc())
+        .limit(limit + 1)  # one extra row answers "is there another page" without a count
+    )
+
+    if cursor is not None:
+        last_created = _cursor_timestamp(cursor)
+        # Bound literals rather than raw values: the comparison is a row-wise `(a, b) < (c, d)`,
+        # and the driver needs the types to render it as one.
+        query = query.where(
+            tuple_(Order.created_at, Order.id)
+            < tuple_(
+                literal(last_created, Order.created_at.type),
+                literal(cursor.last_id, Order.id.type),
+            )
+        )
+
+    rows = list(session.scalars(query).all())
+    has_more = len(rows) > limit
+    return rows[:limit], has_more
+
+
+def next_order_cursor(orders: Sequence[Order], has_more: bool) -> Cursor | None:
+    if not has_more or not orders:
+        return None
+    last = orders[-1]
+    return Cursor(
+        sort=ORDER_HISTORY_SORT,
+        last_id=last.id,
+        last_value=last.created_at.isoformat(),
+    )
+
+
+def _cursor_timestamp(cursor: Cursor) -> dt.datetime:
+    """The cursor's `created_at`, or a rejection if it is not a timestamp.
+
+    A tampered cursor must fail as a handled 400 rather than as a database type error.
+    """
+    try:
+        return dt.datetime.fromisoformat(str(cursor.last_value))
+    except (TypeError, ValueError) as exc:
+        raise InvalidCursor("cursor has no usable timestamp") from exc
 
 
 def resolve_lines(

@@ -133,3 +133,11 @@ class OrderDetail(OrderSummary):
     items: list[OrderItem]
     address: OrderAddress
     tracking: DeliveryTracking
+
+
+class OrderPage(BaseModel):
+    """A page of history, newest first (FR-031)."""
+
+    items: list[OrderSummary]
+    # Null on the last page. Keyset, not offset — see `services/orders.py`.
+    next_cursor: str | None = None

@@ -7,15 +7,16 @@ still buyable — and only then write anything.
 
 from __future__ import annotations
 
+import datetime as dt
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Query, status
 from sqlalchemy import select
 
 from ..auth.user_provisioning import CurrentUser
 from ..deps import ClockDep, DbDep, SettingsDep
-from ..errors import Conflict, NotFound, PaymentDeclined
+from ..errors import BadCursor, Conflict, NotFound, PaymentDeclined
 from ..models import Order
 from ..schemas.catalogue import Money
 from ..schemas.orders import (
@@ -27,16 +28,19 @@ from ..schemas.orders import (
     OrderCreate,
     OrderDetail,
     OrderItem,
+    OrderPage,
+    OrderSummary,
 )
 from ..services import orders as order_service
 from ..services.currency import CurrencyService
+from ..services.cursor import Cursor, InvalidCursor
 
 router = APIRouter(tags=["orders"])
 
 _currency = CurrencyService()
 
 
-def order_detail(order: Order, now: object) -> OrderDetail:
+def order_detail(order: Order, now: dt.datetime) -> OrderDetail:
     """Serialise a stored order. Every value here was written at creation."""
     snapshot = dict(order.address_snapshot)
     items = [
@@ -50,7 +54,7 @@ def order_detail(order: Order, now: object) -> OrderDetail:
         for item in order.items
     ]
 
-    stage = order_service.current_stage(order, now)  # type: ignore[arg-type]
+    stage = order_service.current_stage(order, now)
 
     return OrderDetail(
         id=order.id,
@@ -78,6 +82,56 @@ def order_detail(order: Order, now: object) -> OrderDetail:
                 delivered_at=order.delivered_at,
             ),
         ),
+    )
+
+
+def order_summary(order: Order, now: dt.datetime) -> OrderSummary:
+    """The list view of an order. Deliberately without lines or tracking — a history screen
+    shows neither, and sending them would make the page heavy for nothing."""
+    first_image = next((item.image_snapshot for item in order.items if item.image_snapshot), None)
+    return OrderSummary(
+        id=order.id,
+        order_number=order.order_number,
+        created_at=order.created_at,
+        total=Money(amount_minor=order.total_minor, currency=order.currency),
+        current_stage=DeliveryStage(order_service.current_stage(order, now)),
+        item_count=sum(item.quantity for item in order.items),
+        thumbnail_url=first_image,
+    )
+
+
+@router.get(
+    "/orders",
+    response_model=OrderPage,
+    summary="The authenticated user's order history, newest first",
+    operation_id="listOrders",
+)
+def list_orders(
+    user: CurrentUser,
+    session: DbDep,
+    clock: ClockDep,
+    cursor: str | None = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> OrderPage:
+    """FR-031, FR-032 — the caller's own orders, newest first, keyset paged."""
+    decoded: Cursor | None = None
+    if cursor:
+        try:
+            decoded = Cursor.decode(cursor, expected_sort=order_service.ORDER_HISTORY_SORT)
+        except InvalidCursor as exc:
+            # FR-060: recoverable. The client restarts paging, which the user never sees.
+            raise BadCursor("Start from the beginning of your order history to continue.") from exc
+
+    try:
+        orders, has_more = order_service.list_orders(session, user, decoded, limit)
+    except InvalidCursor as exc:
+        raise BadCursor("Start from the beginning of your order history to continue.") from exc
+
+    now = clock.now()
+    next_cursor = order_service.next_order_cursor(orders, has_more)
+    return OrderPage(
+        items=[order_summary(order, now) for order in orders],
+        next_cursor=next_cursor.encode() if next_cursor else None,
     )
 
 

@@ -52,6 +52,18 @@ enum DeliveryStage {
         DeliveryStage.outForDelivery => 'Out for delivery',
         DeliveryStage.delivered => 'Delivered',
       };
+
+  /// The contract's spelling — what `parse` reads back.
+  ///
+  /// Needed because the order-history cache persists this value. Storing the Dart name instead
+  /// would round-trip `outForDelivery` into `parse`, which does not recognise it, and every
+  /// cached out-for-delivery order would silently read back as `processing`.
+  String get wire => switch (this) {
+        DeliveryStage.processing => 'processing',
+        DeliveryStage.shipped => 'shipped',
+        DeliveryStage.outForDelivery => 'out_for_delivery',
+        DeliveryStage.delivered => 'delivered',
+      };
 }
 
 /// A delivery as the client needs it: two endpoints and four timestamps.

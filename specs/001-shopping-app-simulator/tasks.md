@@ -300,15 +300,25 @@ and interpolated position match the stored timestamps.
 
 ## Phase 7: User Story 5 — Order history (Priority: P5)
 
-- [ ] T102 [P] [US5] Contract test for `GET /orders` in `backend/tests/contract/test_orders_list.py` — paging, ownership scoping, `401` anonymous (FR-031, FR-032)
-- [ ] T103 [P] [US5] Integration test — orders return newest first and page without duplication (FR-031)
-- [ ] T104 [P] [US5] Widget test — order history renders from cache with the network disabled, and says the data may be stale (FR-057, VI)
-- [ ] T105 [P] [US5] Widget test — the no-orders empty state offers a route to the catalogue (FR-063)
-- [ ] T106 [US5] `GET /orders` in `backend/src/dupermarket_api/api/orders.py` with keyset paging
-- [ ] T107 [P] [US5] `mobile/lib/features/orders/presentation/order_history_screen.dart` and `order_detail_screen.dart`
-- [ ] T108 [US5] Drift caching of order history with the sign-out purge hooked in (FR-016, FR-057)
+- [X] T102 [P] [US5] Contract test for `GET /orders` in `backend/tests/contract/test_orders_list.py` — paging, ownership scoping, `401` anonymous (FR-031, FR-032)
+- [X] T103 [P] [US5] Integration test — orders return newest first and page without duplication (FR-031)
+- [X] T104 [P] [US5] Widget test — order history renders from cache with the network disabled, and says the data may be stale (FR-057, VI)
+- [X] T105 [P] [US5] Widget test — the no-orders empty state offers a route to the catalogue (FR-063)
+- [X] T106 [US5] `GET /orders` in `backend/src/dupermarket_api/api/orders.py` with keyset paging
+- [X] T107 [P] [US5] `mobile/lib/features/orders/presentation/order_history_screen.dart` and `order_detail_screen.dart`
+- [X] T108 [US5] Drift caching of order history with the sign-out purge hooked in (FR-016, FR-057)
 
 **Checkpoint**: History is readable online and offline.
+
+**Deviations recorded at implementation**:
+
+- **T108** — only the *first page* of history is cached. Later pages are fetched live: they are
+  what a user scrolls to deliberately, and caching an unbounded number of cursor-paged pages
+  would grow the database with no offline value. Order *detail* is likewise not cached — it is
+  interesting while a delivery is in flight, and the map recomputes the parcel position from the
+  clock regardless.
+- **T107** — `OrderDetailScreen` takes a `showMap` flag, false under test. A `GoogleMap` is a
+  platform view and cannot render in a widget test; the map's own geometry is covered by T095.
 
 ---
 

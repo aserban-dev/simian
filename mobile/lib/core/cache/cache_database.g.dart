@@ -1731,6 +1731,529 @@ class CartLinesCompanion extends UpdateCompanion<CartLine> {
   }
 }
 
+class $CachedOrdersTable extends CachedOrders
+    with TableInfo<$CachedOrdersTable, CachedOrder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedOrdersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _orderNumberMeta =
+      const VerificationMeta('orderNumber');
+  @override
+  late final GeneratedColumn<String> orderNumber = GeneratedColumn<String>(
+      'order_number', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _totalMinorMeta =
+      const VerificationMeta('totalMinor');
+  @override
+  late final GeneratedColumn<int> totalMinor = GeneratedColumn<int>(
+      'total_minor', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _currencyMeta =
+      const VerificationMeta('currency');
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+      'currency', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _currentStageMeta =
+      const VerificationMeta('currentStage');
+  @override
+  late final GeneratedColumn<String> currentStage = GeneratedColumn<String>(
+      'current_stage', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _itemCountMeta =
+      const VerificationMeta('itemCount');
+  @override
+  late final GeneratedColumn<int> itemCount = GeneratedColumn<int>(
+      'item_count', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _thumbnailUrlMeta =
+      const VerificationMeta('thumbnailUrl');
+  @override
+  late final GeneratedColumn<String> thumbnailUrl = GeneratedColumn<String>(
+      'thumbnail_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _positionMeta =
+      const VerificationMeta('position');
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+      'position', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _fetchedAtMeta =
+      const VerificationMeta('fetchedAt');
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+      'fetched_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        orderNumber,
+        createdAt,
+        totalMinor,
+        currency,
+        currentStage,
+        itemCount,
+        thumbnailUrl,
+        position,
+        fetchedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_orders';
+  @override
+  VerificationContext validateIntegrity(Insertable<CachedOrder> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('order_number')) {
+      context.handle(
+          _orderNumberMeta,
+          orderNumber.isAcceptableOrUnknown(
+              data['order_number']!, _orderNumberMeta));
+    } else if (isInserting) {
+      context.missing(_orderNumberMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('total_minor')) {
+      context.handle(
+          _totalMinorMeta,
+          totalMinor.isAcceptableOrUnknown(
+              data['total_minor']!, _totalMinorMeta));
+    } else if (isInserting) {
+      context.missing(_totalMinorMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(_currencyMeta,
+          currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta));
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('current_stage')) {
+      context.handle(
+          _currentStageMeta,
+          currentStage.isAcceptableOrUnknown(
+              data['current_stage']!, _currentStageMeta));
+    } else if (isInserting) {
+      context.missing(_currentStageMeta);
+    }
+    if (data.containsKey('item_count')) {
+      context.handle(_itemCountMeta,
+          itemCount.isAcceptableOrUnknown(data['item_count']!, _itemCountMeta));
+    } else if (isInserting) {
+      context.missing(_itemCountMeta);
+    }
+    if (data.containsKey('thumbnail_url')) {
+      context.handle(
+          _thumbnailUrlMeta,
+          thumbnailUrl.isAcceptableOrUnknown(
+              data['thumbnail_url']!, _thumbnailUrlMeta));
+    }
+    if (data.containsKey('position')) {
+      context.handle(_positionMeta,
+          position.isAcceptableOrUnknown(data['position']!, _positionMeta));
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(_fetchedAtMeta,
+          fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta));
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CachedOrder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedOrder(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      orderNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}order_number'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      totalMinor: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}total_minor'])!,
+      currency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}currency'])!,
+      currentStage: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}current_stage'])!,
+      itemCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}item_count'])!,
+      thumbnailUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}thumbnail_url']),
+      position: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}position'])!,
+      fetchedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}fetched_at'])!,
+    );
+  }
+
+  @override
+  $CachedOrdersTable createAlias(String alias) {
+    return $CachedOrdersTable(attachedDatabase, alias);
+  }
+}
+
+class CachedOrder extends DataClass implements Insertable<CachedOrder> {
+  final String id;
+  final String orderNumber;
+  final DateTime createdAt;
+  final int totalMinor;
+  final String currency;
+  final String currentStage;
+  final int itemCount;
+  final String? thumbnailUrl;
+
+  /// Position in the server's ordering, so a cached page replays in the order it arrived.
+  final int position;
+  final DateTime fetchedAt;
+  const CachedOrder(
+      {required this.id,
+      required this.orderNumber,
+      required this.createdAt,
+      required this.totalMinor,
+      required this.currency,
+      required this.currentStage,
+      required this.itemCount,
+      this.thumbnailUrl,
+      required this.position,
+      required this.fetchedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['order_number'] = Variable<String>(orderNumber);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['total_minor'] = Variable<int>(totalMinor);
+    map['currency'] = Variable<String>(currency);
+    map['current_stage'] = Variable<String>(currentStage);
+    map['item_count'] = Variable<int>(itemCount);
+    if (!nullToAbsent || thumbnailUrl != null) {
+      map['thumbnail_url'] = Variable<String>(thumbnailUrl);
+    }
+    map['position'] = Variable<int>(position);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  CachedOrdersCompanion toCompanion(bool nullToAbsent) {
+    return CachedOrdersCompanion(
+      id: Value(id),
+      orderNumber: Value(orderNumber),
+      createdAt: Value(createdAt),
+      totalMinor: Value(totalMinor),
+      currency: Value(currency),
+      currentStage: Value(currentStage),
+      itemCount: Value(itemCount),
+      thumbnailUrl: thumbnailUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbnailUrl),
+      position: Value(position),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory CachedOrder.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedOrder(
+      id: serializer.fromJson<String>(json['id']),
+      orderNumber: serializer.fromJson<String>(json['orderNumber']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      totalMinor: serializer.fromJson<int>(json['totalMinor']),
+      currency: serializer.fromJson<String>(json['currency']),
+      currentStage: serializer.fromJson<String>(json['currentStage']),
+      itemCount: serializer.fromJson<int>(json['itemCount']),
+      thumbnailUrl: serializer.fromJson<String?>(json['thumbnailUrl']),
+      position: serializer.fromJson<int>(json['position']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'orderNumber': serializer.toJson<String>(orderNumber),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'totalMinor': serializer.toJson<int>(totalMinor),
+      'currency': serializer.toJson<String>(currency),
+      'currentStage': serializer.toJson<String>(currentStage),
+      'itemCount': serializer.toJson<int>(itemCount),
+      'thumbnailUrl': serializer.toJson<String?>(thumbnailUrl),
+      'position': serializer.toJson<int>(position),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  CachedOrder copyWith(
+          {String? id,
+          String? orderNumber,
+          DateTime? createdAt,
+          int? totalMinor,
+          String? currency,
+          String? currentStage,
+          int? itemCount,
+          Value<String?> thumbnailUrl = const Value.absent(),
+          int? position,
+          DateTime? fetchedAt}) =>
+      CachedOrder(
+        id: id ?? this.id,
+        orderNumber: orderNumber ?? this.orderNumber,
+        createdAt: createdAt ?? this.createdAt,
+        totalMinor: totalMinor ?? this.totalMinor,
+        currency: currency ?? this.currency,
+        currentStage: currentStage ?? this.currentStage,
+        itemCount: itemCount ?? this.itemCount,
+        thumbnailUrl:
+            thumbnailUrl.present ? thumbnailUrl.value : this.thumbnailUrl,
+        position: position ?? this.position,
+        fetchedAt: fetchedAt ?? this.fetchedAt,
+      );
+  CachedOrder copyWithCompanion(CachedOrdersCompanion data) {
+    return CachedOrder(
+      id: data.id.present ? data.id.value : this.id,
+      orderNumber:
+          data.orderNumber.present ? data.orderNumber.value : this.orderNumber,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      totalMinor:
+          data.totalMinor.present ? data.totalMinor.value : this.totalMinor,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      currentStage: data.currentStage.present
+          ? data.currentStage.value
+          : this.currentStage,
+      itemCount: data.itemCount.present ? data.itemCount.value : this.itemCount,
+      thumbnailUrl: data.thumbnailUrl.present
+          ? data.thumbnailUrl.value
+          : this.thumbnailUrl,
+      position: data.position.present ? data.position.value : this.position,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedOrder(')
+          ..write('id: $id, ')
+          ..write('orderNumber: $orderNumber, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('totalMinor: $totalMinor, ')
+          ..write('currency: $currency, ')
+          ..write('currentStage: $currentStage, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
+          ..write('position: $position, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, orderNumber, createdAt, totalMinor,
+      currency, currentStage, itemCount, thumbnailUrl, position, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedOrder &&
+          other.id == this.id &&
+          other.orderNumber == this.orderNumber &&
+          other.createdAt == this.createdAt &&
+          other.totalMinor == this.totalMinor &&
+          other.currency == this.currency &&
+          other.currentStage == this.currentStage &&
+          other.itemCount == this.itemCount &&
+          other.thumbnailUrl == this.thumbnailUrl &&
+          other.position == this.position &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class CachedOrdersCompanion extends UpdateCompanion<CachedOrder> {
+  final Value<String> id;
+  final Value<String> orderNumber;
+  final Value<DateTime> createdAt;
+  final Value<int> totalMinor;
+  final Value<String> currency;
+  final Value<String> currentStage;
+  final Value<int> itemCount;
+  final Value<String?> thumbnailUrl;
+  final Value<int> position;
+  final Value<DateTime> fetchedAt;
+  final Value<int> rowid;
+  const CachedOrdersCompanion({
+    this.id = const Value.absent(),
+    this.orderNumber = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.totalMinor = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.currentStage = const Value.absent(),
+    this.itemCount = const Value.absent(),
+    this.thumbnailUrl = const Value.absent(),
+    this.position = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedOrdersCompanion.insert({
+    required String id,
+    required String orderNumber,
+    required DateTime createdAt,
+    required int totalMinor,
+    required String currency,
+    required String currentStage,
+    required int itemCount,
+    this.thumbnailUrl = const Value.absent(),
+    required int position,
+    required DateTime fetchedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        orderNumber = Value(orderNumber),
+        createdAt = Value(createdAt),
+        totalMinor = Value(totalMinor),
+        currency = Value(currency),
+        currentStage = Value(currentStage),
+        itemCount = Value(itemCount),
+        position = Value(position),
+        fetchedAt = Value(fetchedAt);
+  static Insertable<CachedOrder> custom({
+    Expression<String>? id,
+    Expression<String>? orderNumber,
+    Expression<DateTime>? createdAt,
+    Expression<int>? totalMinor,
+    Expression<String>? currency,
+    Expression<String>? currentStage,
+    Expression<int>? itemCount,
+    Expression<String>? thumbnailUrl,
+    Expression<int>? position,
+    Expression<DateTime>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (orderNumber != null) 'order_number': orderNumber,
+      if (createdAt != null) 'created_at': createdAt,
+      if (totalMinor != null) 'total_minor': totalMinor,
+      if (currency != null) 'currency': currency,
+      if (currentStage != null) 'current_stage': currentStage,
+      if (itemCount != null) 'item_count': itemCount,
+      if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
+      if (position != null) 'position': position,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedOrdersCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? orderNumber,
+      Value<DateTime>? createdAt,
+      Value<int>? totalMinor,
+      Value<String>? currency,
+      Value<String>? currentStage,
+      Value<int>? itemCount,
+      Value<String?>? thumbnailUrl,
+      Value<int>? position,
+      Value<DateTime>? fetchedAt,
+      Value<int>? rowid}) {
+    return CachedOrdersCompanion(
+      id: id ?? this.id,
+      orderNumber: orderNumber ?? this.orderNumber,
+      createdAt: createdAt ?? this.createdAt,
+      totalMinor: totalMinor ?? this.totalMinor,
+      currency: currency ?? this.currency,
+      currentStage: currentStage ?? this.currentStage,
+      itemCount: itemCount ?? this.itemCount,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      position: position ?? this.position,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (orderNumber.present) {
+      map['order_number'] = Variable<String>(orderNumber.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (totalMinor.present) {
+      map['total_minor'] = Variable<int>(totalMinor.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (currentStage.present) {
+      map['current_stage'] = Variable<String>(currentStage.value);
+    }
+    if (itemCount.present) {
+      map['item_count'] = Variable<int>(itemCount.value);
+    }
+    if (thumbnailUrl.present) {
+      map['thumbnail_url'] = Variable<String>(thumbnailUrl.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedOrdersCompanion(')
+          ..write('id: $id, ')
+          ..write('orderNumber: $orderNumber, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('totalMinor: $totalMinor, ')
+          ..write('currency: $currency, ')
+          ..write('currentStage: $currentStage, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
+          ..write('position: $position, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$CacheDatabase extends GeneratedDatabase {
   _$CacheDatabase(QueryExecutor e) : super(e);
   $CacheDatabaseManager get managers => $CacheDatabaseManager(this);
@@ -1739,12 +2262,13 @@ abstract class _$CacheDatabase extends GeneratedDatabase {
   late final $CachedProductsTable cachedProducts = $CachedProductsTable(this);
   late final $CacheEntriesTable cacheEntries = $CacheEntriesTable(this);
   late final $CartLinesTable cartLines = $CartLinesTable(this);
+  late final $CachedOrdersTable cachedOrders = $CachedOrdersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [cachedCategories, cachedProducts, cacheEntries, cartLines];
+      [cachedCategories, cachedProducts, cacheEntries, cartLines, cachedOrders];
 }
 
 typedef $$CachedCategoriesTableCreateCompanionBuilder
@@ -2607,6 +3131,256 @@ typedef $$CartLinesTableProcessedTableManager = ProcessedTableManager<
     (CartLine, BaseReferences<_$CacheDatabase, $CartLinesTable, CartLine>),
     CartLine,
     PrefetchHooks Function()>;
+typedef $$CachedOrdersTableCreateCompanionBuilder = CachedOrdersCompanion
+    Function({
+  required String id,
+  required String orderNumber,
+  required DateTime createdAt,
+  required int totalMinor,
+  required String currency,
+  required String currentStage,
+  required int itemCount,
+  Value<String?> thumbnailUrl,
+  required int position,
+  required DateTime fetchedAt,
+  Value<int> rowid,
+});
+typedef $$CachedOrdersTableUpdateCompanionBuilder = CachedOrdersCompanion
+    Function({
+  Value<String> id,
+  Value<String> orderNumber,
+  Value<DateTime> createdAt,
+  Value<int> totalMinor,
+  Value<String> currency,
+  Value<String> currentStage,
+  Value<int> itemCount,
+  Value<String?> thumbnailUrl,
+  Value<int> position,
+  Value<DateTime> fetchedAt,
+  Value<int> rowid,
+});
+
+class $$CachedOrdersTableFilterComposer
+    extends Composer<_$CacheDatabase, $CachedOrdersTable> {
+  $$CachedOrdersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get orderNumber => $composableBuilder(
+      column: $table.orderNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get totalMinor => $composableBuilder(
+      column: $table.totalMinor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get currentStage => $composableBuilder(
+      column: $table.currentStage, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get itemCount => $composableBuilder(
+      column: $table.itemCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get position => $composableBuilder(
+      column: $table.position, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+      column: $table.fetchedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$CachedOrdersTableOrderingComposer
+    extends Composer<_$CacheDatabase, $CachedOrdersTable> {
+  $$CachedOrdersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get orderNumber => $composableBuilder(
+      column: $table.orderNumber, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get totalMinor => $composableBuilder(
+      column: $table.totalMinor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get currentStage => $composableBuilder(
+      column: $table.currentStage,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get itemCount => $composableBuilder(
+      column: $table.itemCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get position => $composableBuilder(
+      column: $table.position, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+      column: $table.fetchedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CachedOrdersTableAnnotationComposer
+    extends Composer<_$CacheDatabase, $CachedOrdersTable> {
+  $$CachedOrdersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get orderNumber => $composableBuilder(
+      column: $table.orderNumber, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get totalMinor => $composableBuilder(
+      column: $table.totalMinor, builder: (column) => column);
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get currentStage => $composableBuilder(
+      column: $table.currentStage, builder: (column) => column);
+
+  GeneratedColumn<int> get itemCount =>
+      $composableBuilder(column: $table.itemCount, builder: (column) => column);
+
+  GeneratedColumn<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$CachedOrdersTableTableManager extends RootTableManager<
+    _$CacheDatabase,
+    $CachedOrdersTable,
+    CachedOrder,
+    $$CachedOrdersTableFilterComposer,
+    $$CachedOrdersTableOrderingComposer,
+    $$CachedOrdersTableAnnotationComposer,
+    $$CachedOrdersTableCreateCompanionBuilder,
+    $$CachedOrdersTableUpdateCompanionBuilder,
+    (
+      CachedOrder,
+      BaseReferences<_$CacheDatabase, $CachedOrdersTable, CachedOrder>
+    ),
+    CachedOrder,
+    PrefetchHooks Function()> {
+  $$CachedOrdersTableTableManager(_$CacheDatabase db, $CachedOrdersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedOrdersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedOrdersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedOrdersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> orderNumber = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> totalMinor = const Value.absent(),
+            Value<String> currency = const Value.absent(),
+            Value<String> currentStage = const Value.absent(),
+            Value<int> itemCount = const Value.absent(),
+            Value<String?> thumbnailUrl = const Value.absent(),
+            Value<int> position = const Value.absent(),
+            Value<DateTime> fetchedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CachedOrdersCompanion(
+            id: id,
+            orderNumber: orderNumber,
+            createdAt: createdAt,
+            totalMinor: totalMinor,
+            currency: currency,
+            currentStage: currentStage,
+            itemCount: itemCount,
+            thumbnailUrl: thumbnailUrl,
+            position: position,
+            fetchedAt: fetchedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String orderNumber,
+            required DateTime createdAt,
+            required int totalMinor,
+            required String currency,
+            required String currentStage,
+            required int itemCount,
+            Value<String?> thumbnailUrl = const Value.absent(),
+            required int position,
+            required DateTime fetchedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CachedOrdersCompanion.insert(
+            id: id,
+            orderNumber: orderNumber,
+            createdAt: createdAt,
+            totalMinor: totalMinor,
+            currency: currency,
+            currentStage: currentStage,
+            itemCount: itemCount,
+            thumbnailUrl: thumbnailUrl,
+            position: position,
+            fetchedAt: fetchedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CachedOrdersTableProcessedTableManager = ProcessedTableManager<
+    _$CacheDatabase,
+    $CachedOrdersTable,
+    CachedOrder,
+    $$CachedOrdersTableFilterComposer,
+    $$CachedOrdersTableOrderingComposer,
+    $$CachedOrdersTableAnnotationComposer,
+    $$CachedOrdersTableCreateCompanionBuilder,
+    $$CachedOrdersTableUpdateCompanionBuilder,
+    (
+      CachedOrder,
+      BaseReferences<_$CacheDatabase, $CachedOrdersTable, CachedOrder>
+    ),
+    CachedOrder,
+    PrefetchHooks Function()>;
 
 class $CacheDatabaseManager {
   final _$CacheDatabase _db;
@@ -2619,4 +3393,6 @@ class $CacheDatabaseManager {
       $$CacheEntriesTableTableManager(_db, _db.cacheEntries);
   $$CartLinesTableTableManager get cartLines =>
       $$CartLinesTableTableManager(_db, _db.cartLines);
+  $$CachedOrdersTableTableManager get cachedOrders =>
+      $$CachedOrdersTableTableManager(_db, _db.cachedOrders);
 }
