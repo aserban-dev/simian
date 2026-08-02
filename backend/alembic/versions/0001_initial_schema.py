@@ -47,6 +47,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_category_no_cycle ON category;
+
 CREATE TRIGGER trg_category_no_cycle
     BEFORE INSERT OR UPDATE OF parent_id ON category
     FOR EACH ROW EXECUTE FUNCTION category_has_no_cycle();

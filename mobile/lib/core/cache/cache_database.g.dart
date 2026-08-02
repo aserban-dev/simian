@@ -1247,6 +1247,490 @@ class CacheEntriesCompanion extends UpdateCompanion<CacheEntry> {
   }
 }
 
+class $CartLinesTable extends CartLines
+    with TableInfo<$CartLinesTable, CartLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CartLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _productIdMeta =
+      const VerificationMeta('productId');
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+      'product_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _unitPriceMinorMeta =
+      const VerificationMeta('unitPriceMinor');
+  @override
+  late final GeneratedColumn<int> unitPriceMinor = GeneratedColumn<int>(
+      'unit_price_minor', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _currencyMeta =
+      const VerificationMeta('currency');
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+      'currency', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _thumbnailUrlMeta =
+      const VerificationMeta('thumbnailUrl');
+  @override
+  late final GeneratedColumn<String> thumbnailUrl = GeneratedColumn<String>(
+      'thumbnail_url', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _stockStatusMeta =
+      const VerificationMeta('stockStatus');
+  @override
+  late final GeneratedColumn<String> stockStatus = GeneratedColumn<String>(
+      'stock_status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('in_stock'));
+  static const VerificationMeta _withdrawnMeta =
+      const VerificationMeta('withdrawn');
+  @override
+  late final GeneratedColumn<bool> withdrawn = GeneratedColumn<bool>(
+      'withdrawn', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("withdrawn" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _addedAtMeta =
+      const VerificationMeta('addedAt');
+  @override
+  late final GeneratedColumn<DateTime> addedAt = GeneratedColumn<DateTime>(
+      'added_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        productId,
+        quantity,
+        title,
+        unitPriceMinor,
+        currency,
+        thumbnailUrl,
+        stockStatus,
+        withdrawn,
+        addedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cart_lines';
+  @override
+  VerificationContext validateIntegrity(Insertable<CartLine> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('product_id')) {
+      context.handle(_productIdMeta,
+          productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta));
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('unit_price_minor')) {
+      context.handle(
+          _unitPriceMinorMeta,
+          unitPriceMinor.isAcceptableOrUnknown(
+              data['unit_price_minor']!, _unitPriceMinorMeta));
+    } else if (isInserting) {
+      context.missing(_unitPriceMinorMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(_currencyMeta,
+          currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta));
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('thumbnail_url')) {
+      context.handle(
+          _thumbnailUrlMeta,
+          thumbnailUrl.isAcceptableOrUnknown(
+              data['thumbnail_url']!, _thumbnailUrlMeta));
+    } else if (isInserting) {
+      context.missing(_thumbnailUrlMeta);
+    }
+    if (data.containsKey('stock_status')) {
+      context.handle(
+          _stockStatusMeta,
+          stockStatus.isAcceptableOrUnknown(
+              data['stock_status']!, _stockStatusMeta));
+    }
+    if (data.containsKey('withdrawn')) {
+      context.handle(_withdrawnMeta,
+          withdrawn.isAcceptableOrUnknown(data['withdrawn']!, _withdrawnMeta));
+    }
+    if (data.containsKey('added_at')) {
+      context.handle(_addedAtMeta,
+          addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta));
+    } else if (isInserting) {
+      context.missing(_addedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {productId};
+  @override
+  CartLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CartLine(
+      productId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}product_id'])!,
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}quantity'])!,
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      unitPriceMinor: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}unit_price_minor'])!,
+      currency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}currency'])!,
+      thumbnailUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}thumbnail_url'])!,
+      stockStatus: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}stock_status'])!,
+      withdrawn: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}withdrawn'])!,
+      addedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}added_at'])!,
+    );
+  }
+
+  @override
+  $CartLinesTable createAlias(String alias) {
+    return $CartLinesTable(attachedDatabase, alias);
+  }
+}
+
+class CartLine extends DataClass implements Insertable<CartLine> {
+  final String productId;
+  final int quantity;
+  final String title;
+  final int unitPriceMinor;
+  final String currency;
+  final String thumbnailUrl;
+
+  /// Mirrors the catalogue's stock status so an unavailable line can be flagged and excluded
+  /// from the total without a network round trip (FR-021, FR-078).
+  final String stockStatus;
+
+  /// True once the catalogue reports the product gone entirely (FR-021).
+  final bool withdrawn;
+  final DateTime addedAt;
+  const CartLine(
+      {required this.productId,
+      required this.quantity,
+      required this.title,
+      required this.unitPriceMinor,
+      required this.currency,
+      required this.thumbnailUrl,
+      required this.stockStatus,
+      required this.withdrawn,
+      required this.addedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['product_id'] = Variable<String>(productId);
+    map['quantity'] = Variable<int>(quantity);
+    map['title'] = Variable<String>(title);
+    map['unit_price_minor'] = Variable<int>(unitPriceMinor);
+    map['currency'] = Variable<String>(currency);
+    map['thumbnail_url'] = Variable<String>(thumbnailUrl);
+    map['stock_status'] = Variable<String>(stockStatus);
+    map['withdrawn'] = Variable<bool>(withdrawn);
+    map['added_at'] = Variable<DateTime>(addedAt);
+    return map;
+  }
+
+  CartLinesCompanion toCompanion(bool nullToAbsent) {
+    return CartLinesCompanion(
+      productId: Value(productId),
+      quantity: Value(quantity),
+      title: Value(title),
+      unitPriceMinor: Value(unitPriceMinor),
+      currency: Value(currency),
+      thumbnailUrl: Value(thumbnailUrl),
+      stockStatus: Value(stockStatus),
+      withdrawn: Value(withdrawn),
+      addedAt: Value(addedAt),
+    );
+  }
+
+  factory CartLine.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CartLine(
+      productId: serializer.fromJson<String>(json['productId']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      title: serializer.fromJson<String>(json['title']),
+      unitPriceMinor: serializer.fromJson<int>(json['unitPriceMinor']),
+      currency: serializer.fromJson<String>(json['currency']),
+      thumbnailUrl: serializer.fromJson<String>(json['thumbnailUrl']),
+      stockStatus: serializer.fromJson<String>(json['stockStatus']),
+      withdrawn: serializer.fromJson<bool>(json['withdrawn']),
+      addedAt: serializer.fromJson<DateTime>(json['addedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'productId': serializer.toJson<String>(productId),
+      'quantity': serializer.toJson<int>(quantity),
+      'title': serializer.toJson<String>(title),
+      'unitPriceMinor': serializer.toJson<int>(unitPriceMinor),
+      'currency': serializer.toJson<String>(currency),
+      'thumbnailUrl': serializer.toJson<String>(thumbnailUrl),
+      'stockStatus': serializer.toJson<String>(stockStatus),
+      'withdrawn': serializer.toJson<bool>(withdrawn),
+      'addedAt': serializer.toJson<DateTime>(addedAt),
+    };
+  }
+
+  CartLine copyWith(
+          {String? productId,
+          int? quantity,
+          String? title,
+          int? unitPriceMinor,
+          String? currency,
+          String? thumbnailUrl,
+          String? stockStatus,
+          bool? withdrawn,
+          DateTime? addedAt}) =>
+      CartLine(
+        productId: productId ?? this.productId,
+        quantity: quantity ?? this.quantity,
+        title: title ?? this.title,
+        unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
+        currency: currency ?? this.currency,
+        thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+        stockStatus: stockStatus ?? this.stockStatus,
+        withdrawn: withdrawn ?? this.withdrawn,
+        addedAt: addedAt ?? this.addedAt,
+      );
+  CartLine copyWithCompanion(CartLinesCompanion data) {
+    return CartLine(
+      productId: data.productId.present ? data.productId.value : this.productId,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      title: data.title.present ? data.title.value : this.title,
+      unitPriceMinor: data.unitPriceMinor.present
+          ? data.unitPriceMinor.value
+          : this.unitPriceMinor,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      thumbnailUrl: data.thumbnailUrl.present
+          ? data.thumbnailUrl.value
+          : this.thumbnailUrl,
+      stockStatus:
+          data.stockStatus.present ? data.stockStatus.value : this.stockStatus,
+      withdrawn: data.withdrawn.present ? data.withdrawn.value : this.withdrawn,
+      addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CartLine(')
+          ..write('productId: $productId, ')
+          ..write('quantity: $quantity, ')
+          ..write('title: $title, ')
+          ..write('unitPriceMinor: $unitPriceMinor, ')
+          ..write('currency: $currency, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
+          ..write('stockStatus: $stockStatus, ')
+          ..write('withdrawn: $withdrawn, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(productId, quantity, title, unitPriceMinor,
+      currency, thumbnailUrl, stockStatus, withdrawn, addedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CartLine &&
+          other.productId == this.productId &&
+          other.quantity == this.quantity &&
+          other.title == this.title &&
+          other.unitPriceMinor == this.unitPriceMinor &&
+          other.currency == this.currency &&
+          other.thumbnailUrl == this.thumbnailUrl &&
+          other.stockStatus == this.stockStatus &&
+          other.withdrawn == this.withdrawn &&
+          other.addedAt == this.addedAt);
+}
+
+class CartLinesCompanion extends UpdateCompanion<CartLine> {
+  final Value<String> productId;
+  final Value<int> quantity;
+  final Value<String> title;
+  final Value<int> unitPriceMinor;
+  final Value<String> currency;
+  final Value<String> thumbnailUrl;
+  final Value<String> stockStatus;
+  final Value<bool> withdrawn;
+  final Value<DateTime> addedAt;
+  final Value<int> rowid;
+  const CartLinesCompanion({
+    this.productId = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.title = const Value.absent(),
+    this.unitPriceMinor = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.thumbnailUrl = const Value.absent(),
+    this.stockStatus = const Value.absent(),
+    this.withdrawn = const Value.absent(),
+    this.addedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CartLinesCompanion.insert({
+    required String productId,
+    required int quantity,
+    required String title,
+    required int unitPriceMinor,
+    required String currency,
+    required String thumbnailUrl,
+    this.stockStatus = const Value.absent(),
+    this.withdrawn = const Value.absent(),
+    required DateTime addedAt,
+    this.rowid = const Value.absent(),
+  })  : productId = Value(productId),
+        quantity = Value(quantity),
+        title = Value(title),
+        unitPriceMinor = Value(unitPriceMinor),
+        currency = Value(currency),
+        thumbnailUrl = Value(thumbnailUrl),
+        addedAt = Value(addedAt);
+  static Insertable<CartLine> custom({
+    Expression<String>? productId,
+    Expression<int>? quantity,
+    Expression<String>? title,
+    Expression<int>? unitPriceMinor,
+    Expression<String>? currency,
+    Expression<String>? thumbnailUrl,
+    Expression<String>? stockStatus,
+    Expression<bool>? withdrawn,
+    Expression<DateTime>? addedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (productId != null) 'product_id': productId,
+      if (quantity != null) 'quantity': quantity,
+      if (title != null) 'title': title,
+      if (unitPriceMinor != null) 'unit_price_minor': unitPriceMinor,
+      if (currency != null) 'currency': currency,
+      if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
+      if (stockStatus != null) 'stock_status': stockStatus,
+      if (withdrawn != null) 'withdrawn': withdrawn,
+      if (addedAt != null) 'added_at': addedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CartLinesCompanion copyWith(
+      {Value<String>? productId,
+      Value<int>? quantity,
+      Value<String>? title,
+      Value<int>? unitPriceMinor,
+      Value<String>? currency,
+      Value<String>? thumbnailUrl,
+      Value<String>? stockStatus,
+      Value<bool>? withdrawn,
+      Value<DateTime>? addedAt,
+      Value<int>? rowid}) {
+    return CartLinesCompanion(
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      title: title ?? this.title,
+      unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
+      currency: currency ?? this.currency,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      stockStatus: stockStatus ?? this.stockStatus,
+      withdrawn: withdrawn ?? this.withdrawn,
+      addedAt: addedAt ?? this.addedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (unitPriceMinor.present) {
+      map['unit_price_minor'] = Variable<int>(unitPriceMinor.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (thumbnailUrl.present) {
+      map['thumbnail_url'] = Variable<String>(thumbnailUrl.value);
+    }
+    if (stockStatus.present) {
+      map['stock_status'] = Variable<String>(stockStatus.value);
+    }
+    if (withdrawn.present) {
+      map['withdrawn'] = Variable<bool>(withdrawn.value);
+    }
+    if (addedAt.present) {
+      map['added_at'] = Variable<DateTime>(addedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CartLinesCompanion(')
+          ..write('productId: $productId, ')
+          ..write('quantity: $quantity, ')
+          ..write('title: $title, ')
+          ..write('unitPriceMinor: $unitPriceMinor, ')
+          ..write('currency: $currency, ')
+          ..write('thumbnailUrl: $thumbnailUrl, ')
+          ..write('stockStatus: $stockStatus, ')
+          ..write('withdrawn: $withdrawn, ')
+          ..write('addedAt: $addedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$CacheDatabase extends GeneratedDatabase {
   _$CacheDatabase(QueryExecutor e) : super(e);
   $CacheDatabaseManager get managers => $CacheDatabaseManager(this);
@@ -1254,12 +1738,13 @@ abstract class _$CacheDatabase extends GeneratedDatabase {
       $CachedCategoriesTable(this);
   late final $CachedProductsTable cachedProducts = $CachedProductsTable(this);
   late final $CacheEntriesTable cacheEntries = $CacheEntriesTable(this);
+  late final $CartLinesTable cartLines = $CartLinesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [cachedCategories, cachedProducts, cacheEntries];
+      [cachedCategories, cachedProducts, cacheEntries, cartLines];
 }
 
 typedef $$CachedCategoriesTableCreateCompanionBuilder
@@ -1894,6 +2379,234 @@ typedef $$CacheEntriesTableProcessedTableManager = ProcessedTableManager<
     ),
     CacheEntry,
     PrefetchHooks Function()>;
+typedef $$CartLinesTableCreateCompanionBuilder = CartLinesCompanion Function({
+  required String productId,
+  required int quantity,
+  required String title,
+  required int unitPriceMinor,
+  required String currency,
+  required String thumbnailUrl,
+  Value<String> stockStatus,
+  Value<bool> withdrawn,
+  required DateTime addedAt,
+  Value<int> rowid,
+});
+typedef $$CartLinesTableUpdateCompanionBuilder = CartLinesCompanion Function({
+  Value<String> productId,
+  Value<int> quantity,
+  Value<String> title,
+  Value<int> unitPriceMinor,
+  Value<String> currency,
+  Value<String> thumbnailUrl,
+  Value<String> stockStatus,
+  Value<bool> withdrawn,
+  Value<DateTime> addedAt,
+  Value<int> rowid,
+});
+
+class $$CartLinesTableFilterComposer
+    extends Composer<_$CacheDatabase, $CartLinesTable> {
+  $$CartLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get productId => $composableBuilder(
+      column: $table.productId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get unitPriceMinor => $composableBuilder(
+      column: $table.unitPriceMinor,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get stockStatus => $composableBuilder(
+      column: $table.stockStatus, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get withdrawn => $composableBuilder(
+      column: $table.withdrawn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get addedAt => $composableBuilder(
+      column: $table.addedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$CartLinesTableOrderingComposer
+    extends Composer<_$CacheDatabase, $CartLinesTable> {
+  $$CartLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get productId => $composableBuilder(
+      column: $table.productId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get unitPriceMinor => $composableBuilder(
+      column: $table.unitPriceMinor,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+      column: $table.currency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get stockStatus => $composableBuilder(
+      column: $table.stockStatus, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get withdrawn => $composableBuilder(
+      column: $table.withdrawn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get addedAt => $composableBuilder(
+      column: $table.addedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CartLinesTableAnnotationComposer
+    extends Composer<_$CacheDatabase, $CartLinesTable> {
+  $$CartLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get unitPriceMinor => $composableBuilder(
+      column: $table.unitPriceMinor, builder: (column) => column);
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<String> get thumbnailUrl => $composableBuilder(
+      column: $table.thumbnailUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get stockStatus => $composableBuilder(
+      column: $table.stockStatus, builder: (column) => column);
+
+  GeneratedColumn<bool> get withdrawn =>
+      $composableBuilder(column: $table.withdrawn, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
+}
+
+class $$CartLinesTableTableManager extends RootTableManager<
+    _$CacheDatabase,
+    $CartLinesTable,
+    CartLine,
+    $$CartLinesTableFilterComposer,
+    $$CartLinesTableOrderingComposer,
+    $$CartLinesTableAnnotationComposer,
+    $$CartLinesTableCreateCompanionBuilder,
+    $$CartLinesTableUpdateCompanionBuilder,
+    (CartLine, BaseReferences<_$CacheDatabase, $CartLinesTable, CartLine>),
+    CartLine,
+    PrefetchHooks Function()> {
+  $$CartLinesTableTableManager(_$CacheDatabase db, $CartLinesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CartLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CartLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CartLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> productId = const Value.absent(),
+            Value<int> quantity = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<int> unitPriceMinor = const Value.absent(),
+            Value<String> currency = const Value.absent(),
+            Value<String> thumbnailUrl = const Value.absent(),
+            Value<String> stockStatus = const Value.absent(),
+            Value<bool> withdrawn = const Value.absent(),
+            Value<DateTime> addedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CartLinesCompanion(
+            productId: productId,
+            quantity: quantity,
+            title: title,
+            unitPriceMinor: unitPriceMinor,
+            currency: currency,
+            thumbnailUrl: thumbnailUrl,
+            stockStatus: stockStatus,
+            withdrawn: withdrawn,
+            addedAt: addedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String productId,
+            required int quantity,
+            required String title,
+            required int unitPriceMinor,
+            required String currency,
+            required String thumbnailUrl,
+            Value<String> stockStatus = const Value.absent(),
+            Value<bool> withdrawn = const Value.absent(),
+            required DateTime addedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CartLinesCompanion.insert(
+            productId: productId,
+            quantity: quantity,
+            title: title,
+            unitPriceMinor: unitPriceMinor,
+            currency: currency,
+            thumbnailUrl: thumbnailUrl,
+            stockStatus: stockStatus,
+            withdrawn: withdrawn,
+            addedAt: addedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CartLinesTableProcessedTableManager = ProcessedTableManager<
+    _$CacheDatabase,
+    $CartLinesTable,
+    CartLine,
+    $$CartLinesTableFilterComposer,
+    $$CartLinesTableOrderingComposer,
+    $$CartLinesTableAnnotationComposer,
+    $$CartLinesTableCreateCompanionBuilder,
+    $$CartLinesTableUpdateCompanionBuilder,
+    (CartLine, BaseReferences<_$CacheDatabase, $CartLinesTable, CartLine>),
+    CartLine,
+    PrefetchHooks Function()>;
 
 class $CacheDatabaseManager {
   final _$CacheDatabase _db;
@@ -1904,4 +2617,6 @@ class $CacheDatabaseManager {
       $$CachedProductsTableTableManager(_db, _db.cachedProducts);
   $$CacheEntriesTableTableManager get cacheEntries =>
       $$CacheEntriesTableTableManager(_db, _db.cacheEntries);
+  $$CartLinesTableTableManager get cartLines =>
+      $$CartLinesTableTableManager(_db, _db.cartLines);
 }

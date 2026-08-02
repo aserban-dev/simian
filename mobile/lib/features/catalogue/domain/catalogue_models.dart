@@ -24,6 +24,14 @@ enum StockStatus {
         _ => StockStatus.inStock,
       };
 
+  /// The contract's spelling. Needed because the cart persists this value locally, and storing
+  /// the enum's Dart name would break the moment one is renamed.
+  String get wire => switch (this) {
+        StockStatus.inStock => 'in_stock',
+        StockStatus.lowStock => 'low_stock',
+        StockStatus.outOfStock => 'out_of_stock',
+      };
+
   /// FR-078: browsable and labelled, but not addable to the cart.
   bool get isPurchasable => this != StockStatus.outOfStock;
 }

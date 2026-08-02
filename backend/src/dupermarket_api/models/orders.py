@@ -54,6 +54,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_order_stages_write_once ON "order";
+
 CREATE TRIGGER trg_order_stages_write_once
     BEFORE UPDATE ON "order"
     FOR EACH ROW EXECUTE FUNCTION order_stages_are_write_once();
@@ -73,6 +75,12 @@ class Order(Base, TimestampMixin):
     )
     # FR-044: even a purged address leaves the order correct.
     address_snapshot: Mapped[dict[str, str]] = mapped_column(JSONB, nullable=False)
+
+    # Supplied by the client so a lost *response* cannot become a second order — the request
+    # arrived and the order exists, but the user saw no confirmation and tapped Confirm again.
+    # Nullable because it is optional in the contract: two deliberate identical orders are a
+    # real thing a shopper can do, and deduplicating those would be wrong.
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     total_minor: Mapped[int] = mapped_column(BIGINT, nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
@@ -114,6 +122,15 @@ class Order(Base, TimestampMixin):
             name="delivery_window_bounds",
         ),
         Index("ix_order_user_created", "user_id", "created_at", "id"),
+        # Scoped to the user, not global: one user's key must never return another's order.
+        # Partial, so the many orders with no key do not collide with each other.
+        Index(
+            "uq_order_idempotency_key",
+            "user_id",
+            "idempotency_key",
+            unique=True,
+            postgresql_where="idempotency_key IS NOT NULL",
+        ),
     )
 
 

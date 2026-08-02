@@ -206,31 +206,47 @@ card and confirm the order; repeat with the decline card and confirm nothing is 
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T070 [P] [US3] Contract tests for `POST /orders` in `backend/tests/contract/test_orders_create.py` — `201`, `402` decline, `404` foreign address, `401` anonymous, and `409` when a product is withdrawn between submission and commit, asserting the whole order is rejected with no partial row written and the product named in `detail` (FR-021)
-- [ ] T071 [P] [US3] Contract-document assertion in `backend/tests/contract/test_no_payment_fields.py` — walk every schema in `openapi.yaml` and fail on any property matching card-field patterns (FR-023, Principle I)
-- [ ] T072 [P] [US3] Integration test — a declined checkout creates no order row and returns a retryable problem (FR-024, FR-025)
-- [ ] T073 [P] [US3] Integration test — after ordering, mutate the product's title and price, re-read the order, assert the snapshot values are unchanged (FR-027)
-- [ ] T074 [P] [US3] Integration test — repeating `POST /orders` with the same `idempotency_key` returns the original order and creates no duplicate
-- [ ] T075 [P] [US3] Unit test — subtotal arithmetic in integer minor units across quantities and discounts, with no float anywhere in the path (research D4)
-- [ ] T076 [P] [US3] Widget test — the cart survives an app restart and is fully mutable offline (FR-019)
-- [ ] T077 [P] [US3] Widget test — a cart line whose product is withdrawn is flagged and excluded from the total rather than blocking checkout (FR-021); the same applies to a product that goes out of stock while in the cart, and add-to-cart is disabled for an out-of-stock product (FR-078)
-- [ ] T078 [P] [US3] Widget test — attempting checkout offline shows an explicit connection message and queues nothing (FR-029)
-- [ ] T079 [P] [US3] Widget test — the empty cart state shows copy and a browse action (FR-063)
+- [X] T070 [P] [US3] Contract tests for `POST /orders` in `backend/tests/contract/test_orders_create.py` — `201`, `402` decline, `404` foreign address, `401` anonymous, and `409` when a product is withdrawn between submission and commit, asserting the whole order is rejected with no partial row written and the product named in `detail` (FR-021)
+- [X] T071 [P] [US3] Contract-document assertion in `backend/tests/contract/test_no_payment_fields.py` — walk every schema in `openapi.yaml` and fail on any property matching card-field patterns (FR-023, Principle I)
+- [X] T072 [P] [US3] Integration test — a declined checkout creates no order row and returns a retryable problem (FR-024, FR-025)
+- [X] T073 [P] [US3] Integration test — after ordering, mutate the product's title and price, re-read the order, assert the snapshot values are unchanged (FR-027)
+- [X] T074 [P] [US3] Integration test — repeating `POST /orders` with the same `idempotency_key` returns the original order and creates no duplicate
+- [X] T075 [P] [US3] Unit test — subtotal arithmetic in integer minor units across quantities and discounts, with no float anywhere in the path (research D4)
+- [X] T076 [P] [US3] Widget test — the cart survives an app restart and is fully mutable offline (FR-019)
+- [X] T077 [P] [US3] Widget test — a cart line whose product is withdrawn is flagged and excluded from the total rather than blocking checkout (FR-021); the same applies to a product that goes out of stock while in the cart, and add-to-cart is disabled for an out-of-stock product (FR-078)
+- [X] T078 [P] [US3] Widget test — attempting checkout offline shows an explicit connection message and queues nothing (FR-029)
+- [X] T079 [P] [US3] Widget test — the empty cart state shows copy and a browse action (FR-063)
 
 ### Implementation for User Story 3
 
-- [ ] T080 [P] [US3] `order`, `order_item` models in `backend/src/dupermarket_api/models/`
-- [ ] T081 [P] [US3] Order request/response schemas in `backend/src/dupermarket_api/schemas/orders.py`
-- [ ] T082 [US3] `backend/src/dupermarket_api/services/orders.py` — validate address ownership and stock, snapshot line items, compute totals through the currency seam, record `fx_rate` (FR-026, FR-027)
-- [ ] T083 [US3] Demo card outcome resolution in `backend/src/dupermarket_api/services/orders.py` — `decline` returns `402` before any write (FR-024, FR-025)
-- [ ] T084 [US3] Router `backend/src/dupermarket_api/api/orders.py` — `POST /orders`
-- [ ] T085 [P] [US3] `mobile/lib/features/cart/` — Drift-backed local cart: add, change quantity, remove (FR-018), persistence across restarts and offline mutability (FR-019), running subtotal through the currency seam (FR-020)
-- [ ] T086 [P] [US3] `mobile/lib/features/checkout/demo_cards.dart` — the built-in card constants, the only place cards exist
-- [ ] T087 [US3] `mobile/lib/features/checkout/presentation/` — review, address pick, card pick, confirm, confirmation screen with order number and window (FR-022, FR-030)
-- [ ] T088 [US3] Connectivity precondition on the checkout action — explicit message, no queueing (FR-029)
-- [ ] T089 [US3] Clear the cart on a successful order (FR-028)
+- [X] T080 [P] [US3] `order`, `order_item` models in `backend/src/dupermarket_api/models/`
+- [X] T081 [P] [US3] Order request/response schemas in `backend/src/dupermarket_api/schemas/orders.py`
+- [X] T082 [US3] `backend/src/dupermarket_api/services/orders.py` — validate address ownership and stock, snapshot line items, compute totals through the currency seam, record `fx_rate` (FR-026, FR-027)
+- [X] T083 [US3] Demo card outcome resolution in `backend/src/dupermarket_api/services/orders.py` — `decline` returns `402` before any write (FR-024, FR-025)
+- [X] T084 [US3] Router `backend/src/dupermarket_api/api/orders.py` — `POST /orders`
+- [X] T085 [P] [US3] `mobile/lib/features/cart/` — Drift-backed local cart: add, change quantity, remove (FR-018), persistence across restarts and offline mutability (FR-019), running subtotal through the currency seam (FR-020)
+- [X] T086 [P] [US3] `mobile/lib/features/checkout/demo_cards.dart` — the built-in card constants, the only place cards exist
+- [X] T087 [US3] `mobile/lib/features/checkout/presentation/` — review, address pick, card pick, confirm, confirmation screen with order number and window (FR-022, FR-030)
+- [X] T088 [US3] Connectivity precondition on the checkout action — explicit message, no queueing (FR-029)
+- [X] T089 [US3] Clear the cart on a successful order (FR-028)
 
 **Checkpoint**: The core simulated transaction works end to end.
+
+**Deviations recorded at implementation**:
+
+- **T080** — `order` and `order_item` already existed from T028. What this task added is
+  `order.idempotency_key` and its per-user partial unique index (migration
+  `0002_order_idempotency_key`), without which T074 has nothing to key a replay on.
+- **T087** — built as one screen (review, address, card, confirm) plus a separate confirmation
+  screen, rather than four sequential steps. With a preselected address and three cosmetic
+  cards there are two decisions to make; a four-page wizard over two decisions is ceremony.
+  Every element the task names is present and tested.
+- **Migration baseline flaw, found while adding 0002.** `0001_initial` builds from
+  `Base.metadata`, so it creates whatever the models say *today* — adding a column to a model
+  silently changes the baseline, and a plain `ADD COLUMN` in 0002 then fails on a fresh
+  database. 0002 checks before it alters so both paths work, and says why. The real fix is to
+  rewrite 0001 as explicit DDL, which is a change to an already-applied migration and is left
+  as its own task.
 
 ---
 

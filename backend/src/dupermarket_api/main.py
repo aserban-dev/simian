@@ -11,7 +11,7 @@ import logging
 
 from fastapi import FastAPI
 
-from .api import categories, me, products
+from .api import categories, me, orders, products
 from .config import Settings, get_settings
 from .errors import install_error_handlers
 
@@ -51,8 +51,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # US2 — the authenticated user's own profile. Lazily provisioned (FR-014).
     app.include_router(me.router, prefix=API_PREFIX)
 
+    # US3 — the simulated checkout. No payment integration exists (Principle I).
+    app.include_router(orders.router, prefix=API_PREFIX)
+
     # Registered here as each remaining user story lands:
-    #   app.include_router(orders.router,     prefix=API_PREFIX)   # T084, T098, T106
     #   app.include_router(addresses.router,  prefix=API_PREFIX)   # T118 (US6)
     #   app.include_router(wishlist.router,   prefix=API_PREFIX)   # T119 (US6)
     #   app.include_router(devices.router,    prefix=API_PREFIX)   # T127 (US7)
