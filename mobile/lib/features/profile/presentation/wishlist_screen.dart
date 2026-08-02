@@ -16,6 +16,7 @@ class WishlistScreen extends StatelessWidget {
     this.onOpenProduct,
     this.onRemove,
     this.onBrowse,
+    this.onRefresh,
     super.key,
   });
 
@@ -23,6 +24,9 @@ class WishlistScreen extends StatelessWidget {
   final void Function(ProductSummary product)? onOpenProduct;
   final void Function(ProductSummary product)? onRemove;
   final VoidCallback? onBrowse;
+
+  /// FR-058: pull-to-refresh forces a fetch whatever the TTL says.
+  final Future<void> Function()? onRefresh;
 
   static const String title = 'Wishlist';
   static const String emptyTitle = 'Nothing saved yet';
@@ -37,20 +41,23 @@ class WishlistScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text(title)),
       body: SafeArea(
-        child: products.isEmpty
-            ? _Empty(onBrowse: onBrowse)
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: products.length,
-                separatorBuilder: (_, __) => const Divider(height: 24),
-                itemBuilder: (BuildContext context, int index) => _Row(
-                  product: products[index],
-                  onOpen: onOpenProduct,
-                  onRemove: onRemove,
-                ),
-              ),
+        child: products.isEmpty ? _Empty(onBrowse: onBrowse) : _list(),
       ),
     );
+  }
+
+  Widget _list() {
+    final Widget list = ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: products.length,
+      separatorBuilder: (_, __) => const Divider(height: 24),
+      itemBuilder: (BuildContext context, int index) => _Row(
+        product: products[index],
+        onOpen: onOpenProduct,
+        onRemove: onRemove,
+      ),
+    );
+    return onRefresh == null ? list : RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }
 

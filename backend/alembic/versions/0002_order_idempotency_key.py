@@ -20,6 +20,7 @@ done here: it is a change to an applied migration, not to this one.
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0002_order_idempotency_key"

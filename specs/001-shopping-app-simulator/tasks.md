@@ -400,16 +400,34 @@ and interpolated position match the stored timestamps.
 
 ## Phase 10: User Story 8 — Offline and degraded connectivity (Priority: P8)
 
-- [ ] T131 [P] [US8] Widget test — cached content renders before any network response, then updates in place without a flash or a lost scroll position (FR-057)
-- [ ] T132 [P] [US8] Widget test — content older than the TTL is refetched; pull-to-refresh forces a fetch regardless (FR-058)
-- [ ] T133 [P] [US8] Widget test — each of the four `AppFailure` variants renders its own message and a retry (FR-059, FR-060)
-- [ ] T134 [P] [US8] Widget test — the offline banner appears on connectivity loss and clears on restore (FR-062)
-- [ ] T135 [P] [US8] Widget test — a cache written by an older schema version is rebuilt rather than deserialised (edge case)
-- [ ] T136 [US8] TTL policy and background refresh in `mobile/lib/core/cache/`
-- [ ] T137 [US8] Connectivity listener and offline banner in `mobile/lib/core/network/`
-- [ ] T138 [US8] Pull-to-refresh on every list screen
+- [X] T131 [P] [US8] Widget test — cached content renders before any network response, then updates in place without a flash or a lost scroll position (FR-057)
+- [X] T132 [P] [US8] Widget test — content older than the TTL is refetched; pull-to-refresh forces a fetch regardless (FR-058)
+- [X] T133 [P] [US8] Widget test — each of the four `AppFailure` variants renders its own message and a retry (FR-059, FR-060)
+- [X] T134 [P] [US8] Widget test — the offline banner appears on connectivity loss and clears on restore (FR-062)
+- [X] T135 [P] [US8] Widget test — a cache written by an older schema version is rebuilt rather than deserialised (edge case)
+- [X] T136 [US8] TTL policy and background refresh in `mobile/lib/core/cache/`
+- [X] T137 [US8] Connectivity listener and offline banner in `mobile/lib/core/network/`
+- [X] T138 [US8] Pull-to-refresh on every list screen
 
 **Checkpoint**: The full offline walk from [quickstart.md](./quickstart.md#manual-smoke-walk) passes.
+
+**Deviations recorded at implementation**:
+
+- **T133 / T136** — largely already satisfied before this phase. The four-variant failure copy
+  and retry behaviour were built in T031 (`failure_view_test.dart`), and the TTL policy in T033
+  (`cache_policy_test.dart`). What this phase added is the *closed-set* assertion — a fifth
+  failure variant cannot be introduced without its own message — and the repository-level TTL
+  behaviour, which the pure policy tests could not show.
+- **T137** — `connectivity_plus` is wired behind `ConnectivityMonitor`, and only
+  `core/network/connectivity.dart` imports it. The plugin's platform channel cannot run in a
+  widget test, so the banner is tested against `FakeConnectivityMonitor`; the adapter itself is
+  unexercised here and needs a device.
+- **T138** — the cart's pull-to-refresh re-checks *availability*, not the cart. The cart is
+  local-authoritative (FR-019), so there is nothing to pull down; what goes stale is whether a
+  line has been withdrawn or gone out of stock since it was added (FR-021, FR-078).
+- The checkpoint's **manual smoke walk has not been performed** — it needs a running app, which
+  needs the Firebase and Maps configuration this checkout does not have. Everything the walk
+  checks is covered by automated tests; the walk itself remains outstanding.
 
 ---
 

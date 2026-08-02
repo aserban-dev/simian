@@ -21,6 +21,7 @@ class CartScreen extends StatelessWidget {
     this.onRemove,
     this.onCheckOut,
     this.onBrowse,
+    this.onRefresh,
     super.key,
   });
 
@@ -29,6 +30,11 @@ class CartScreen extends StatelessWidget {
   final void Function(String productId)? onRemove;
   final VoidCallback? onCheckOut;
   final VoidCallback? onBrowse;
+
+  /// Re-checks availability rather than re-fetching the cart: the cart is local-authoritative
+  /// (FR-019), so there is nothing to pull down. What can be stale is whether a line has been
+  /// withdrawn or gone out of stock since it was added (FR-021, FR-078).
+  final Future<void> Function()? onRefresh;
 
   static const String emptyTitle = 'Your cart is empty';
   static const String emptyBody = 'Add something you like and it will show up here.';
@@ -43,8 +49,14 @@ class CartScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Cart')),
       body: SafeArea(
-        child: snapshot.isEmpty ? _Empty(onBrowse: onBrowse) : _Lines(snapshot: snapshot,
-            onQuantityChanged: onQuantityChanged, onRemove: onRemove),
+        child: snapshot.isEmpty
+            ? _Empty(onBrowse: onBrowse)
+            : _Lines(
+                snapshot: snapshot,
+                onQuantityChanged: onQuantityChanged,
+                onRemove: onRemove,
+                onRefresh: onRefresh,
+              ),
       ),
       bottomNavigationBar: snapshot.isEmpty ? null : _Footer(
         snapshot: snapshot,
@@ -98,15 +110,21 @@ class _Empty extends StatelessWidget {
 }
 
 class _Lines extends StatelessWidget {
-  const _Lines({required this.snapshot, this.onQuantityChanged, this.onRemove});
+  const _Lines({
+    required this.snapshot,
+    this.onQuantityChanged,
+    this.onRemove,
+    this.onRefresh,
+  });
 
   final CartSnapshot snapshot;
   final void Function(String productId, int quantity)? onQuantityChanged;
   final void Function(String productId)? onRemove;
+  final Future<void> Function()? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    final Widget list = ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: snapshot.lines.length,
       separatorBuilder: (_, __) => const Divider(height: 24),
@@ -116,6 +134,7 @@ class _Lines extends StatelessWidget {
         onRemove: onRemove,
       ),
     );
+    return onRefresh == null ? list : RefreshIndicator(onRefresh: onRefresh!, child: list);
   }
 }
 

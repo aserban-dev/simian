@@ -24,8 +24,11 @@ dependencies:
   # US4 (T100): the delivery map. Route geometry sits behind `RouteProvider`, so replacing the
   # straight line with road routing later does not touch the map widget.
   google_maps_flutter: ^2.14.2
+  # US8 (T137): the connectivity listener behind `ConnectivityMonitor`. Only the adapter in
+  # `core/network/connectivity.dart` imports it.
+  connectivity_plus: ^7.3.1
   # Still to land with their features:
-  #   cached_network_image, firebase_messaging, flutter_local_notifications, connectivity_plus
+  #   cached_network_image, firebase_messaging, flutter_local_notifications
   flutter_localizations:
     sdk: flutter
 
