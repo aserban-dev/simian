@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The verification gate the constitution names. It runs first and independently of every
+  # other job, because a requirement with no test is a failure regardless of whether the code
+  # that does exist compiles.
+  gate:
+    name: Traceability & simulation boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Requirement coverage and Principle I boundary
+        run: python3 scripts/check_traceability.py
+
+  contract:
+    name: API contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate the OpenAPI document
+        run: >
+          uvx --from openapi-spec-validator openapi-spec-validator
+          specs/001-shopping-app-simulator/contracts/openapi.yaml
+      - name: Contract tests
+        working-directory: backend
+        run: |
+          uv sync --extra dev
+          uv run pytest tests/contract -q
+
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dupermarket_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dupermarket_test
+      # The integration fixtures create this database if it is missing, so the service
+      # container needs no extra setup step.
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/dupermarket_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install
+        working-directory: backend
+        run: uv sync --extra dev
+      - name: Lint and typecheck
+        working-directory: backend
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy
+      - name: Unit, contract and integration tests
+        working-directory: backend
+        run: uv run pytest tests -q
+      - name: Fail if the integration suite silently skipped
+        working-directory: backend
+        run: |
+          # The database fixtures skip when Postgres is unreachable. In CI a skip means the
+          # service container is broken, and a green run would be a false pass.
+          uv run pytest tests/integration -q --no-header -rN 2>&1 | tee /tmp/int.log
+          grep -qE '[0-9]+ passed' /tmp/int.log || { echo "integration suite did not run"; exit 1; }
+          grep -qE '[0-9]+ skipped' /tmp/int.log && { echo "integration tests skipped in CI"; exit 1; } || true
+      - name: Migrations apply and are reversible
+        working-directory: backend
+        env:
+          FIREBASE_PROJECT_ID: ci-placeholder
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+  seed:
+    name: Seed pipeline tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - working-directory: seed
+        run: |
+          if [ -d tests ] && [ -n "$(find tests -name 'test_*.py' -print -quit)" ]; then
+            uv run --with pytest pytest tests -q
+          else
+            echo "no seed tests yet — arrive with /speckit-implement (T139-T143)"
+          fi
+
+  mobile:
+    name: Flutter tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - working-directory: mobile
+        run: flutter pub get
+      - name: Analyze
+        working-directory: mobile
+        run: flutter analyze
+      - name: Test
+        working-directory: mobile
+        run: flutter test
+      # Goldens are platform-sensitive: generate and verify them only on this runner OS,
+      # otherwise font rendering differences produce failures that mean nothing.
+      - name: Golden tests
+        working-directory: mobile
+        run: |
+          if [ -d test/goldens ]; then flutter test test/goldens; else
+            echo "no goldens yet — arrive with /speckit-implement (T037)"
+          fi

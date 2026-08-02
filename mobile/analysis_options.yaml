@@ -1,0 +1,32 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/l10n/generated/**"
+  errors:
+    use_build_context_synchronously: error
+
+linter:
+  rules:
+    # Error handling (Principle IV) — a swallowed exception is a dead end
+    - avoid_catches_without_on_clauses
+    - only_throw_errors
+    - unawaited_futures
+
+    # Layout hygiene (Principle VII)
+    - sized_box_for_whitespace
+    - avoid_unnecessary_containers
+    - use_full_hex_values_for_flutter_colors
+
+    - always_declare_return_types
+    - prefer_const_constructors
+    - prefer_final_locals
+    - prefer_single_quotes
+
+# FR-067 (text legible at 200% OS font scale) has no lint that can enforce it: flutter_lints
+# ships no `avoid_hardcoded_font_size`, and a rule that does not exist in the config is silently
+# ignored rather than failing. The enforcement point is therefore the golden test matrix at 1.0x
+# and 2.0x text scale (T037, T059), not static analysis. Written down so nobody adds a
+# no-op rule here and believes the requirement is covered.

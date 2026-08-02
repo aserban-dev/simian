@@ -1,0 +1,847 @@
+openapi: 3.1.0
+info:
+  title: DuperMarket Shopping App Simulator API
+  version: 1.0.0
+  description: |
+    Backend contract for the Shopping App Simulator.
+
+    This document is the **input to the contract test suite**, not a description of it.
+    Every operation below must have, at minimum:
+      - a success test asserting the response validates against the declared schema,
+      - a failure test,
+      - for every operation marked with the `firebaseIdToken` security scheme, an anonymous
+        test asserting `401` and, where the resource is user-owned, a cross-user test
+        asserting `404`.
+
+    Authorisation returns `404`, never `403`, for a resource owned by another user. Returning
+    `403` would confirm the identifier exists (FR-013).
+
+    No operation, request body, or response in this document contains a payment card field.
+    Checkout carries only `demo_card_id`, an enum of built-in cosmetic identifiers
+    (constitution, Principle I).
+  contact:
+    name: DuperMarket
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.dev.dupermarket.example/v1
+    description: dev
+  - url: https://api.staging.dupermarket.example/v1
+    description: staging
+  - url: https://api.dupermarket.example/v1
+    description: prod
+
+tags:
+  - name: catalogue
+    description: Public browsing. No authentication required (FR-010).
+  - name: profile
+    description: The authenticated user's own data.
+  - name: orders
+    description: Simulated purchases and delivery tracking.
+  - name: devices
+    description: Push notification targets.
+
+security:
+  - firebaseIdToken: []
+
+paths:
+  /categories:
+    get:
+      tags: [catalogue]
+      summary: Category tree
+      description: Returns the full category tree. Public (FR-001, FR-010).
+      operationId: listCategories
+      security: []
+      responses:
+        '200':
+          description: The category tree, top-level nodes with nested children.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /products:
+    get:
+      tags: [catalogue]
+      summary: List, search, filter, and sort products
+      description: |
+        Public (FR-010). Keyset paginated: pass the `next_cursor` from the previous response as
+        `cursor`. The cursor encodes the active sort key plus the product id, so the ordering is
+        stable across pages even while the catalogue changes underneath (FR-002).
+        Withdrawn products are never returned.
+      operationId: listProducts
+      security: []
+      parameters:
+        - name: category
+          in: query
+          description: Category slug. Includes descendant categories.
+          schema: { type: string }
+        - name: q
+          in: query
+          description: Free text, matched against title and description (FR-003).
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: min_price
+          in: query
+          description: Inclusive lower bound, minor units of `currency`.
+          schema: { type: integer, format: int64, minimum: 0 }
+        - name: max_price
+          in: query
+          description: Inclusive upper bound, minor units of `currency`.
+          schema: { type: integer, format: int64, minimum: 0 }
+        - name: min_rating
+          in: query
+          schema: { type: number, minimum: 0, maximum: 5 }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [price_asc, price_desc, rating, newest, relevance]
+            default: newest
+        - name: currency
+          in: query
+          description: Display currency. Falls back to the base currency when no rate exists (FR-052).
+          schema: { $ref: '#/components/schemas/CurrencyCode' }
+        - name: locale
+          in: query
+          schema: { type: string, example: en-GB }
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: A page of products.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor, currency]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductSummary' }
+                  next_cursor:
+                    type: [string, 'null']
+                    description: Null when this is the last page.
+                  currency: { $ref: '#/components/schemas/CurrencyCode' }
+                  currency_fallback:
+                    type: boolean
+                    description: True when the requested currency had no rate and prices are in the base currency (FR-052).
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /products/{productId}:
+    get:
+      tags: [catalogue]
+      summary: Product detail including images
+      operationId: getProduct
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/ProductId' }
+        - name: currency
+          in: query
+          schema: { $ref: '#/components/schemas/CurrencyCode' }
+        - name: locale
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: The product (FR-006).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /products/{productId}/reviews:
+    get:
+      tags: [catalogue]
+      summary: Reviews for a product, newest first
+      operationId: listReviews
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/ProductId' }
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: A page of reviews (FR-007).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Review' }
+                  next_cursor: { type: [string, 'null'] }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [catalogue]
+      summary: Add a review
+      description: One review per user per product (FR-008). A second attempt returns 409.
+      operationId: createReview
+      parameters:
+        - { $ref: '#/components/parameters/ProductId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: string, maxLength: 2000 }
+      responses:
+        '201':
+          description: Created. The product's rating average and count are updated (FR-009).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: This user has already reviewed this product.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /me:
+    get:
+      tags: [profile]
+      summary: The authenticated user's profile
+      description: Lazily creates the profile on first authenticated call (FR-014).
+      operationId: getMe
+      responses:
+        '200':
+          description: The profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [profile]
+      summary: Update the profile
+      description: |
+        Language and currency overrides, notification preferences (FR-046, FR-048, FR-049), and
+        the display name.
+
+        `display_name` exists here for one specific reason (FR-081, research D13): Apple returns
+        the user's name **only on the first authorisation**, and it is not carried in the ID
+        token. The client must therefore write it here at sign-up, or the account stays unnamed
+        permanently. Sending `null` or omitting the field leaves the stored name untouched —
+        a later sign-in that carries no name must not erase it.
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: [string, 'null']
+                  maxLength: 120
+                  description: >-
+                    Captured at sign-up from the provider. Null or absent leaves the stored
+                    value unchanged; it never clears it (FR-081).
+                language_override: { type: [string, 'null'], description: 'BCP-47, or null to follow the device' }
+                currency_override:
+                  oneOf:
+                    - { $ref: '#/components/schemas/CurrencyCode' }
+                    - { type: 'null' }
+                notification_prefs: { type: object, additionalProperties: { type: boolean } }
+      responses:
+        '200':
+          description: The updated profile.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [profile]
+      summary: Request account deletion
+      description: |
+        Records the request and immediately deregisters the user's notification devices, so no
+        further push can reach them. The account stays usable and orders already in progress
+        complete and remain readable until the request is processed (FR-017). A request made
+        while an order is mid-delivery is accepted, not rejected.
+
+        Deletion is handled manually in v1; there is no automated purge. Reviews are anonymised
+        rather than deleted, so product rating averages stay reproducible.
+      operationId: requestAccountDeletion
+      responses:
+        '202':
+          description: Deletion requested; devices deregistered (FR-017).
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /me/addresses:
+    get:
+      tags: [profile]
+      summary: List saved addresses
+      operationId: listAddresses
+      responses:
+        '200':
+          description: The user's addresses; exactly one is default (FR-041).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [profile]
+      summary: Save an address
+      description: |
+        Geocoded once, here, on the write path (FR-042). If the address cannot be resolved to
+        coordinates the request fails with `422` and nothing is saved (FR-043).
+      operationId: createAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressInput' }
+      responses:
+        '201':
+          description: Created, with resolved coordinates.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422':
+          description: The address could not be resolved to coordinates. Nothing was saved (FR-043).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /me/addresses/{addressId}:
+    parameters:
+      - name: addressId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [profile]
+      summary: Update an address
+      description: Re-geocodes only when a location-bearing field changes.
+      operationId: updateAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddressInput' }
+      responses:
+        '200':
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Address' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422':
+          description: Could not be resolved to coordinates; nothing changed.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+    delete:
+      tags: [profile]
+      summary: Delete an address
+      description: |
+        Soft delete. Orders that shipped to this address are unaffected and keep showing it
+        (FR-044). Deleting the default promotes the most recently used remaining address.
+      operationId: deleteAddress
+      responses:
+        '204': { description: Deleted. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: This is the only address and an order is in progress.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /me/wishlist:
+    get:
+      tags: [profile]
+      summary: List wishlist products
+      operationId: listWishlist
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: A page of wishlisted products (FR-045).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ProductSummary' }
+                  next_cursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [profile]
+      summary: Add a product to the wishlist
+      description: Idempotent — adding twice yields the same state and still returns 201.
+      operationId: addWishlistItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id]
+              properties:
+                product_id: { type: string, format: uuid }
+      responses:
+        '201': { description: Added. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /me/wishlist/{productId}:
+    delete:
+      tags: [profile]
+      summary: Remove a product from the wishlist
+      operationId: removeWishlistItem
+      parameters:
+        - { $ref: '#/components/parameters/ProductId' }
+      responses:
+        '204': { description: Removed. }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders:
+    get:
+      tags: [orders]
+      summary: The authenticated user's order history, newest first
+      operationId: listOrders
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: A page of orders (FR-031).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/OrderSummary' }
+                  next_cursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [orders]
+      summary: Create an order (simulated checkout)
+      description: |
+        Assigns the origin warehouse and all four delivery stage timestamps in the same
+        transaction (FR-033). Those values are immutable afterwards (FR-034).
+
+        The request carries `demo_card_id` — an identifier for one of the built-in cosmetic
+        cards — and nothing else payment-related. There is no field anywhere in this contract
+        that accepts a card number, expiry, or security code (FR-023, constitution Principle I).
+
+        `demo_card_id: "decline"` deterministically returns `402`, creates no order, and leaves
+        the caller's cart untouched (FR-024, FR-025).
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items, address_id, demo_card_id, currency]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [product_id, quantity]
+                    properties:
+                      product_id: { type: string, format: uuid }
+                      quantity: { type: integer, minimum: 1, maximum: 99 }
+                address_id: { type: string, format: uuid }
+                demo_card_id: { $ref: '#/components/schemas/DemoCardId' }
+                currency: { $ref: '#/components/schemas/CurrencyCode' }
+                idempotency_key:
+                  type: string
+                  description: Repeating a create with the same key returns the original order rather than a duplicate.
+      responses:
+        '201':
+          description: The created order, including the full delivery timeline.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderDetail' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402':
+          description: |
+            The demo card declined. No order was created and the caller's cart is unchanged
+            (FR-025). This is a simulated outcome; no payment was attempted.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '404':
+          description: The address or one of the products does not exist, or is not the caller's.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '409':
+          description: |
+            A product in the order is out of stock or withdrawn.
+
+            This covers the race only. Under FR-021 the client already flags and excludes a
+            withdrawn line before submitting, so reaching this response means the product was
+            withdrawn between submission and commit. The whole order is rejected — never
+            partially recorded with the line silently dropped — and `detail` names the product
+            so the client can say which one.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /orders/{orderId}:
+    get:
+      tags: [orders]
+      summary: Order detail including the tracking payload
+      description: |
+        Returns origin, destination, and the delivery window so the client can compute the
+        parcel position itself (FR-036). The server never computes or stores that position.
+        Another user's order returns `404`, not `403` (FR-013, FR-032).
+      operationId: getOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: The order.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /me/devices:
+    post:
+      tags: [devices]
+      summary: Register a push notification token
+      description: |
+        Upserts on the token. A token already registered to a different user is reassigned to
+        the caller, so a shared device does not push one user's orders to another.
+      operationId: registerDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fcm_token, platform]
+              properties:
+                fcm_token: { type: string, minLength: 1 }
+                platform: { type: string, enum: [ios, android] }
+      responses:
+        '204': { description: Registered. }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    firebaseIdToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        A Firebase ID token. Verified in-process against Firebase's JWKS; issuer, audience, and
+        expiry are all checked. The backend issues no tokens of its own.
+
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque keyset cursor from the previous response's `next_cursor`.
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    BadRequest:
+      description: Malformed request.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Missing, malformed, or expired credential.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: |
+        No such resource, or it belongs to another user. These two cases are deliberately
+        indistinguishable (FR-013).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ServiceUnavailable:
+      description: Temporarily unavailable. Clients distinguish this from no-connectivity (FR-059).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      description: RFC 9457 problem detail. Never contains a stack trace or a raw driver error (FR-060).
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string, description: 'Human-readable and safe to show to a user.' }
+        instance: { type: string }
+        retryable: { type: boolean, description: 'Whether the client should offer a retry.' }
+
+    CurrencyCode:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      example: EUR
+
+    Money:
+      description: An exact amount in minor units. Never a float.
+      type: object
+      required: [amount_minor, currency]
+      properties:
+        amount_minor: { type: integer, format: int64 }
+        currency: { $ref: '#/components/schemas/CurrencyCode' }
+
+    DemoCardId:
+      description: |
+        One of the built-in cosmetic cards. Not a payment instrument: no number, expiry, or
+        security code is transmitted or stored anywhere in this system.
+      type: string
+      enum: [visa_success, mastercard_success, decline]
+
+    Category:
+      type: object
+      required: [id, slug, name, sort_order, children]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string, description: 'Resolved for the requested locale, English fallback (FR-047).' }
+        image_url: { type: [string, 'null'], format: uri }
+        sort_order: { type: integer }
+        children:
+          type: array
+          items: { $ref: '#/components/schemas/Category' }
+
+    ProductSummary:
+      type: object
+      required: [id, title, price, thumbnail_url, rating_average, rating_count, stock_status]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        price: { $ref: '#/components/schemas/Money' }
+        original_price:
+          oneOf:
+            - { $ref: '#/components/schemas/Money' }
+            - { type: 'null' }
+          description: |
+            Present only when discounted; rendered struck through with the discounted price
+            primary (FR-077). Converted through the same currency call as `price`, so the two
+            can never be shown in different currencies.
+        thumbnail_url: { type: string, format: uri, description: 'A CDN URL. The API never proxies image bytes.' }
+        thumbnail_alt: { type: string, description: 'Screen-reader text (FR-068).' }
+        rating_average: { type: number, minimum: 0, maximum: 5 }
+        rating_count: { type: integer, minimum: 0 }
+        stock_status:
+          type: string
+          enum: [in_stock, low_stock, out_of_stock]
+          description: |
+            Out-of-stock products stay browsable and searchable and are labelled as such; the
+            client disables add-to-cart for them (FR-078). They are not hidden — only withdrawn
+            products are.
+
+    ProductDetail:
+      allOf:
+        - { $ref: '#/components/schemas/ProductSummary' }
+        - type: object
+          required: [description, images]
+          properties:
+            description: { type: string }
+            sku: { type: string }
+            category_slug: { type: string }
+            images:
+              type: array
+              minItems: 1
+              items: { $ref: '#/components/schemas/ProductImage' }
+
+    ProductImage:
+      type: object
+      required: [url, sort_order, alt_text]
+      properties:
+        url: { type: string, format: uri }
+        sort_order: { type: integer }
+        alt_text: { type: string }
+        attribution:
+          type: [object, 'null']
+          description: Populated when the source's licence requires credit (FR-075).
+          properties:
+            source: { type: string }
+            photographer: { type: [string, 'null'] }
+            source_url: { type: [string, 'null'], format: uri }
+
+    Review:
+      description: |
+        FR-079: this is a closed set. A review exposes its rating, comment, creation time, and
+        the author's provider-supplied display name and avatar — no other user attribute, to
+        anyone, authenticated or not. Reviews are readable anonymously, so any field added here
+        is published to the world.
+      type: object
+      required: [id, rating, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: [string, 'null'] }
+        author_name: { type: [string, 'null'] }
+        author_avatar_url: { type: [string, 'null'], format: uri }
+        created_at: { type: string, format: date-time }
+
+    User:
+      type: object
+      required: [id, notification_prefs]
+      properties:
+        id: { type: string, format: uuid }
+        display_name: { type: [string, 'null'] }
+        avatar_url: { type: [string, 'null'], format: uri }
+        language_override: { type: [string, 'null'] }
+        currency_override:
+          oneOf:
+            - { $ref: '#/components/schemas/CurrencyCode' }
+            - { type: 'null' }
+        notification_prefs: { type: object, additionalProperties: { type: boolean } }
+        deletion_requested_at: { type: [string, 'null'], format: date-time }
+
+    AddressInput:
+      type: object
+      required: [line1, city, country_code]
+      properties:
+        label: { type: [string, 'null'] }
+        recipient_name: { type: [string, 'null'] }
+        line1: { type: string, minLength: 1 }
+        line2: { type: [string, 'null'] }
+        city: { type: string, minLength: 1 }
+        postal_code: { type: [string, 'null'] }
+        country_code: { type: string, pattern: '^[A-Z]{2}$' }
+        is_default: { type: boolean, default: false }
+
+    Address:
+      allOf:
+        - { $ref: '#/components/schemas/AddressInput' }
+        - type: object
+          required: [id, lat, lng, is_default]
+          properties:
+            id: { type: string, format: uuid }
+            lat: { type: number, minimum: -90, maximum: 90 }
+            lng: { type: number, minimum: -180, maximum: 180 }
+            is_default: { type: boolean }
+
+    DeliveryStage:
+      type: string
+      enum: [processing, shipped, out_for_delivery, delivered]
+
+    DeliveryTracking:
+      description: |
+        Everything a client needs to compute the parcel position itself. The elapsed fraction is
+        clamped to 0..1 on the device so a wrong clock cannot move the parcel off the route
+        (FR-038).
+      type: object
+      required: [origin, destination, window_start, window_end, stages, current_stage]
+      properties:
+        origin: { $ref: '#/components/schemas/LatLng' }
+        destination: { $ref: '#/components/schemas/LatLng' }
+        window_start: { type: string, format: date-time }
+        window_end: { type: string, format: date-time }
+        current_stage: { $ref: '#/components/schemas/DeliveryStage' }
+        stages:
+          type: object
+          required: [processing_at, shipped_at, out_for_delivery_at, delivered_at]
+          description: All four assigned at creation and immutable thereafter (FR-033, FR-034).
+          properties:
+            processing_at: { type: string, format: date-time }
+            shipped_at: { type: string, format: date-time }
+            out_for_delivery_at: { type: string, format: date-time }
+            delivered_at: { type: string, format: date-time }
+
+    LatLng:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lng: { type: number, minimum: -180, maximum: 180 }
+
+    OrderSummary:
+      type: object
+      required: [id, order_number, created_at, total, current_stage]
+      properties:
+        id: { type: string, format: uuid }
+        order_number: { type: string }
+        created_at: { type: string, format: date-time }
+        total: { $ref: '#/components/schemas/Money' }
+        current_stage: { $ref: '#/components/schemas/DeliveryStage' }
+        item_count: { type: integer, minimum: 1 }
+        thumbnail_url: { type: [string, 'null'], format: uri }
+
+    OrderDetail:
+      allOf:
+        - { $ref: '#/components/schemas/OrderSummary' }
+        - type: object
+          required: [items, address, tracking]
+          properties:
+            items:
+              type: array
+              minItems: 1
+              items: { $ref: '#/components/schemas/OrderItem' }
+            address:
+              description: The address as it was at purchase time, not as it is now (FR-044).
+              type: object
+              properties:
+                recipient_name: { type: [string, 'null'] }
+                formatted: { type: string }
+            tracking: { $ref: '#/components/schemas/DeliveryTracking' }
+
+    OrderItem:
+      description: Every field here is a snapshot taken at purchase time (FR-027).
+      type: object
+      required: [product_id, quantity, unit_price, title, image_url]
+      properties:
+        product_id: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1 }
+        unit_price: { $ref: '#/components/schemas/Money' }
+        title: { type: string }
+        image_url: { type: string, format: uri }

@@ -117,3 +117,30 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+.idea/
+*.iml
+
+# Python (backend, seed, scripts)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# uv.lock is deliberately NOT ignored: these are applications, not libraries, so a committed
+# lock is what makes a CI run reproduce a local one.
+
+# Secrets and local config — .env.example is checked in, .env is not
+.env
+.env.*
+!.env.example
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+serviceAccountKey*.json
+
+# Seed pipeline local image cache
+seed/.cache/
