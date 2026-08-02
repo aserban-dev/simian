@@ -11,7 +11,7 @@ import logging
 
 from fastapi import FastAPI
 
-from .api import addresses, categories, me, orders, products, wishlist
+from .api import addresses, categories, devices, me, orders, products, wishlist
 from .config import Settings, get_settings
 from .errors import install_error_handlers
 
@@ -58,8 +58,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(addresses.router, prefix=API_PREFIX)
     app.include_router(wishlist.router, prefix=API_PREFIX)
 
-    # Registered here as each remaining user story lands:
-    #   app.include_router(devices.router,    prefix=API_PREFIX)   # T127 (US7)
+    # US7 — push token registration. No per-stage push is sent from here (research D6).
+    app.include_router(devices.router, prefix=API_PREFIX)
 
     return app
 

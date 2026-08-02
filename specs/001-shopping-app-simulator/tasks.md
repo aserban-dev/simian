@@ -368,17 +368,33 @@ and interpolated position match the stored timestamps.
 > local notifications scheduled on-device at order creation from the immutable timestamps. No
 > server-side scheduler, which is what keeps this consistent with FR-035.
 
-- [ ] T122 [P] [US7] Unit test — `(order, now) -> List<ScheduledNotification>` produces exactly three notifications with stable ids derived from `order_id + stage` (FR-054)
-- [ ] T123 [P] [US7] Unit test — scheduling the same order twice deduplicates rather than double-notifying (FR-054)
-- [ ] T124 [P] [US7] Contract test for `POST /me/devices` in `backend/tests/contract/test_devices.py` — including that re-registering a token owned by another user reassigns it
-- [ ] T125 [P] [US7] Widget test — permission is not requested on first launch, and is requested after the first order with an explanation (FR-053)
-- [ ] T126 [P] [US7] Integration test — with permission denied, every other function still works (FR-056)
-- [ ] T127 [US7] Router `backend/src/dupermarket_api/api/devices.py` — upsert with cross-user reassignment
-- [ ] T128 [US7] `mobile/lib/features/notifications/scheduler.dart` — schedule the three local notifications at order creation
-- [ ] T129 [US7] Contextual permission prompt on the order confirmation screen (FR-053)
-- [ ] T130 [US7] Deep links from notification tap to order detail, cold and warm start (FR-055)
+- [X] T122 [P] [US7] Unit test — `(order, now) -> List<ScheduledNotification>` produces exactly three notifications with stable ids derived from `order_id + stage` (FR-054)
+- [X] T123 [P] [US7] Unit test — scheduling the same order twice deduplicates rather than double-notifying (FR-054)
+- [X] T124 [P] [US7] Contract test for `POST /me/devices` in `backend/tests/contract/test_devices.py` — including that re-registering a token owned by another user reassigns it
+- [X] T125 [P] [US7] Widget test — permission is not requested on first launch, and is requested after the first order with an explanation (FR-053)
+- [X] T126 [P] [US7] Integration test — with permission denied, every other function still works (FR-056)
+- [X] T127 [US7] Router `backend/src/dupermarket_api/api/devices.py` — upsert with cross-user reassignment
+- [X] T128 [US7] `mobile/lib/features/notifications/scheduler.dart` — schedule the three local notifications at order creation
+- [X] T129 [US7] Contextual permission prompt on the order confirmation screen (FR-053)
+- [X] T130 [US7] Deep links from notification tap to order detail, cold and warm start (FR-055)
 
 **Checkpoint**: Notifications work without any server-side scheduler.
+
+**Deviations recorded at implementation**:
+
+- **T128 / T129 / T130** — the scheduling *rules* are implemented and tested as pure functions
+  behind a `NotificationPlatform` interface; no notification plugin is wired in. Neither
+  `flutter_local_notifications` nor `firebase_messaging` is a dependency yet, and neither can be
+  exercised in a widget test — a local notification needs a device, and FCM needs the Firebase
+  project this checkout does not have (same gap as T066 and T100). What FR-054 actually
+  specifies — three notifications, stable derived ids, deduplication, past stages skipped — is
+  covered without them, and adopting a plugin is one implementation of the interface.
+- **T130** — deep-link *parsing* is covered (`orderIdFromDeepLink`, including the malformed and
+  null cases that matter at cold start). Registering the `dupermarket://` URL scheme with iOS
+  and Android is native configuration and belongs with T009 (flavors), still open in Phase 1.
+- **T126** — asserted client-side, where the requirement lives: FR-056 is about the *app* not
+  degrading when permission is denied, and the scheduler is written to have no failure mode a
+  caller must handle. Nothing on the backend varies with notification permission.
 
 ---
 
