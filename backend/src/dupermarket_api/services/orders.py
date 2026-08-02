@@ -19,8 +19,6 @@ amendment rather than a feature (Principle I).
 from __future__ import annotations
 
 import datetime as dt
-import hashlib
-import math
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -32,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from ..models import Address, AppUser, Order, OrderItem, Product
 from ..schemas.orders import DemoCardId
+from .delivery import Timeline, current_stage_at, delivery_timeline, nearest_warehouse
 from .presentation import cdn_url, discounted_minor, localise
 
 # --- money -------------------------------------------------------------------------------
@@ -74,104 +73,11 @@ def card_declines(demo_card_id: DemoCardId) -> bool:
     return demo_card_id in DECLINING_CARDS
 
 
-# --- warehouses and the delivery window --------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class Warehouse:
-    name: str
-    lat: float
-    lng: float
-
-
-# Fictional. Research D5: nearest-warehouse selection keeps the map line short enough to look
-# real without any logistics integration existing.
-WAREHOUSES: tuple[Warehouse, ...] = (
-    Warehouse("Bucharest Hub", 44.4268, 26.1025),
-    Warehouse("Warsaw Hub", 52.2297, 21.0122),
-    Warehouse("Berlin Hub", 52.5200, 13.4050),
-    Warehouse("Paris Hub", 48.8566, 2.3522),
-    Warehouse("Madrid Hub", 40.4168, -3.7038),
-    Warehouse("Stockholm Hub", 59.3293, 18.0686),
-    Warehouse("Dublin Hub", 53.3498, -6.2603),
-)
-
-_EARTH_RADIUS_KM = 6371.0
-
-
-def great_circle_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    """Haversine distance. Only ever used to rank warehouses, never shown to a user."""
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    d_phi = math.radians(lat2 - lat1)
-    d_lambda = math.radians(lng2 - lng1)
-    a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
-    return 2 * _EARTH_RADIUS_KM * math.asin(math.sqrt(a))
-
-
-def nearest_warehouse(lat: float, lng: float) -> Warehouse:
-    return min(WAREHOUSES, key=lambda w: great_circle_km(lat, lng, w.lat, w.lng))
-
-
-@dataclass(frozen=True, slots=True)
-class Timeline:
-    processing_at: dt.datetime
-    shipped_at: dt.datetime
-    out_for_delivery_at: dt.datetime
-    delivered_at: dt.datetime
-
-
-# Research D5's base window. Jitter is added on top and is bounded so the result always stays
-# inside the 24–96 hour range the database enforces.
-_BASE_SHIP_HOURS = 6
-_BASE_OUT_FOR_DELIVERY_HOURS = 54
-_BASE_DELIVERED_HOURS = 60
-_SHIP_JITTER_MINUTES = 120
-_DELIVERY_JITTER_MINUTES = 360
-
-
-def _jitter(order_id: uuid.UUID, salt: str, modulo: int) -> int:
-    """Deterministic minutes derived from the order id (Principle III).
-
-    Hashing rather than `random` because the same order must always produce the same timeline —
-    including when a test recomputes it — and an unseeded RNG would break that outright.
-    """
-    digest = hashlib.sha256(f"{order_id}:{salt}".encode()).hexdigest()
-    return int(digest[:8], 16) % modulo
-
-
-def delivery_timeline(order_id: uuid.UUID, now: dt.datetime) -> Timeline:
-    """All four stages, assigned once (FR-033).
-
-    Ordering holds for every possible jitter: shipping lands 6–8h out, the van 54–60h out, and
-    delivery 60–66h out, so the stages cannot cross and the window cannot leave its bounds.
-    """
-    ship_jitter = dt.timedelta(minutes=_jitter(order_id, "ship", _SHIP_JITTER_MINUTES))
-    delivery_jitter = dt.timedelta(minutes=_jitter(order_id, "deliver", _DELIVERY_JITTER_MINUTES))
-
-    return Timeline(
-        processing_at=now,
-        shipped_at=now + dt.timedelta(hours=_BASE_SHIP_HOURS) + ship_jitter,
-        out_for_delivery_at=(
-            now + dt.timedelta(hours=_BASE_OUT_FOR_DELIVERY_HOURS) + delivery_jitter
-        ),
-        delivered_at=now + dt.timedelta(hours=_BASE_DELIVERED_HOURS) + delivery_jitter,
-    )
-
-
-def current_stage(order: Order, now: dt.datetime) -> str:
-    """The present stage as a pure function of stored timestamps and the clock (FR-035).
-
-    Nothing is stored for this and no job advances it. Reading later simply returns a later
-    answer.
-    """
-    if now >= order.delivered_at:
-        return "delivered"
-    if now >= order.out_for_delivery_at:
-        return "out_for_delivery"
-    if now >= order.shipped_at:
-        return "shipped"
-    return "processing"
-
+# --- the delivery simulation ---------------------------------------------------------------
+#
+# Lives in `delivery.py` (T096). Re-exported here because order creation is the one caller that
+# needs it, and because a second copy of the window rules is exactly how the stored timeline and
+# the derived stage would drift apart.
 
 # --- errors ------------------------------------------------------------------------------
 
@@ -185,6 +91,21 @@ class ProductUnavailable(Exception):
 
 
 # --- creation ----------------------------------------------------------------------------
+
+
+def timeline_of(order: Order) -> Timeline:
+    """The stored timeline, as the shared value type."""
+    return Timeline(
+        processing_at=order.processing_at,
+        shipped_at=order.shipped_at,
+        out_for_delivery_at=order.out_for_delivery_at,
+        delivered_at=order.delivered_at,
+    )
+
+
+def current_stage(order: Order, now: dt.datetime) -> str:
+    """The present stage of a stored order (FR-035). One rule, in `delivery.py`."""
+    return current_stage_at(timeline_of(order), now)
 
 
 @dataclass(frozen=True, slots=True)

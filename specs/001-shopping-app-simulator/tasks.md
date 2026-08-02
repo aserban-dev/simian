@@ -259,23 +259,42 @@ and interpolated position match the stored timestamps.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T090 [P] [US4] Unit test — stage derivation at every boundary: before processing, on each timestamp exactly, between each pair, after delivered (FR-035)
-- [ ] T091 [P] [US4] Unit test — elapsed fraction clamps to 0 and to 1 for clocks set before the window and after it (FR-038)
-- [ ] T092 [P] [US4] Unit test — warehouse assignment picks the nearest fixed warehouse and is stable for a given destination; the four stage timestamps are non-decreasing and the creation-to-delivery window falls between 24 and 96 hours for every destination in the warehouse table (FR-033, research D5)
-- [ ] T093 [P] [US4] Unit test — stage timestamps for a given order id are identical across repeated generation (Principle III, SC-008)
-- [ ] T094 [P] [US4] Contract test for `GET /orders/{id}` in `backend/tests/contract/test_orders_get.py` — includes the tracking payload; another user's order returns `404` (FR-032, FR-036)
-- [ ] T095 [P] [US4] Widget test — the map renders origin, destination, polyline, and a marker at the expected fraction for a frozen clock (FR-039)
+- [X] T090 [P] [US4] Unit test — stage derivation at every boundary: before processing, on each timestamp exactly, between each pair, after delivered (FR-035)
+- [X] T091 [P] [US4] Unit test — elapsed fraction clamps to 0 and to 1 for clocks set before the window and after it (FR-038)
+- [X] T092 [P] [US4] Unit test — warehouse assignment picks the nearest fixed warehouse and is stable for a given destination; the four stage timestamps are non-decreasing and the creation-to-delivery window falls between 24 and 96 hours for every destination in the warehouse table (FR-033, research D5)
+- [X] T093 [P] [US4] Unit test — stage timestamps for a given order id are identical across repeated generation (Principle III, SC-008)
+- [X] T094 [P] [US4] Contract test for `GET /orders/{id}` in `backend/tests/contract/test_orders_get.py` — includes the tracking payload; another user's order returns `404` (FR-032, FR-036)
+- [X] T095 [P] [US4] Widget test — the map renders origin, destination, polyline, and a marker at the expected fraction for a frozen clock (FR-039)
 
 ### Implementation for User Story 4
 
-- [ ] T096 [US4] `backend/src/dupermarket_api/services/delivery.py` — warehouse table, nearest selection, deterministic jittered window, stage derivation (FR-033, FR-035)
-- [ ] T097 [US4] Wire stage assignment into order creation in the same transaction (FR-033)
-- [ ] T098 [US4] `GET /orders/{id}` returning `DeliveryTracking` in `backend/src/dupermarket_api/api/orders.py` (FR-036)
-- [ ] T099 [P] [US4] `mobile/lib/features/orders/domain/parcel_position.dart` — clamped interpolation, injected clock (FR-037, FR-038)
-- [ ] T100 [P] [US4] `mobile/lib/features/orders/presentation/delivery_map.dart` — Google Maps widget, polyline, animated marker, behind a `RouteProvider` interface so road routing can replace the straight line later (Principle V)
-- [ ] T101 [US4] Stage timeline widget above the map showing all four stages and their timestamps
+- [X] T096 [US4] `backend/src/dupermarket_api/services/delivery.py` — warehouse table, nearest selection, deterministic jittered window, stage derivation (FR-033, FR-035)
+- [X] T097 [US4] Wire stage assignment into order creation in the same transaction (FR-033)
+- [X] T098 [US4] `GET /orders/{id}` returning `DeliveryTracking` in `backend/src/dupermarket_api/api/orders.py` (FR-036)
+- [X] T099 [P] [US4] `mobile/lib/features/orders/domain/parcel_position.dart` — clamped interpolation, injected clock (FR-037, FR-038)
+- [X] T100 [P] [US4] `mobile/lib/features/orders/presentation/delivery_map.dart` — Google Maps widget, polyline, animated marker, behind a `RouteProvider` interface so road routing can replace the straight line later (Principle V)
+- [X] T101 [US4] Stage timeline widget above the map showing all four stages and their timestamps
 
 **Checkpoint**: Delivery tracking is demoable and deterministic.
+
+**Deviations recorded at implementation**:
+
+- **T096 / T097** — the warehouse table, window generation and stage derivation were written in
+  Phase 5, inside `services/orders.py`, because order creation could not assign a timeline
+  without them. T096 moved them to `services/delivery.py` as the task names; `orders.py` now
+  calls that one rule rather than holding a second copy. T097 was therefore already satisfied —
+  stage assignment has been inside the order-creation transaction since T082.
+- **T091** — implemented and tested client-side (`parcel_position.dart`), not on the backend.
+  FR-038 clamps the fraction *on the device*, and the contract deliberately returns no parcel
+  position, so a server-side elapsed fraction would be a second implementation of a rule that
+  has one home.
+- **T095** — a `GoogleMap` is a platform view and renders nothing in a widget test. The test
+  asserts the geometry the map is *handed* — marker positions, the polyline, the framing camera
+  — which is the whole of what FR-039 specifies. The map surface itself is left to integration
+  and manual testing, where a platform view can actually be exercised.
+- **T100** — `google_maps_flutter` is wired in, but no Maps API key is configured in this
+  checkout, so the map has not been rendered against live Google Maps. Same shape as T066:
+  the logic is tested behind its seam; the platform integration awaits credentials.
 
 ---
 

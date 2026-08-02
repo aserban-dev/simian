@@ -21,9 +21,11 @@ dependencies:
   # `signInWithProvider`, so no per-provider SDK is needed.
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
+  # US4 (T100): the delivery map. Route geometry sits behind `RouteProvider`, so replacing the
+  # straight line with road routing later does not touch the map widget.
+  google_maps_flutter: ^2.14.2
   # Still to land with their features:
-  #   cached_network_image, google_maps_flutter, firebase_messaging,
-  #   flutter_local_notifications, connectivity_plus
+  #   cached_network_image, firebase_messaging, flutter_local_notifications, connectivity_plus
   flutter_localizations:
     sdk: flutter
 

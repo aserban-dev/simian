@@ -7,7 +7,11 @@ still buyable — and only then write anything.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Path, status
+from sqlalchemy import select
 
 from ..auth.user_provisioning import CurrentUser
 from ..deps import ClockDep, DbDep, SettingsDep
@@ -75,6 +79,31 @@ def order_detail(order: Order, now: object) -> OrderDetail:
             ),
         ),
     )
+
+
+@router.get(
+    "/orders/{orderId}",
+    response_model=OrderDetail,
+    summary="Order detail including the tracking payload",
+    operation_id="getOrder",
+)
+def get_order(
+    order_id: Annotated[uuid.UUID, Path(alias="orderId")],
+    user: CurrentUser,
+    session: DbDep,
+    clock: ClockDep,
+) -> OrderDetail:
+    """FR-036: origin, destination and the window, so the client can place the parcel itself.
+
+    The lookup is scoped by `user_id` in the query rather than fetched-then-checked. Both
+    reject the same requests, but only this one makes "not yours" and "does not exist" the same
+    code path — and FR-032 requires them to be the same *answer*.
+    """
+    order = session.scalar(select(Order).where(Order.id == order_id, Order.user_id == user.id))
+    if order is None:
+        raise NotFound("We couldn't find that order.")
+
+    return order_detail(order, clock.now())
 
 
 @router.post(
