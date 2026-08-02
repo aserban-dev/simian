@@ -2254,6 +2254,198 @@ class CachedOrdersCompanion extends UpdateCompanion<CachedOrder> {
   }
 }
 
+class $PreferenceEntriesTable extends PreferenceEntries
+    with TableInfo<$PreferenceEntriesTable, PreferenceEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PreferenceEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+      'key', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+      'value', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'preference_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<PreferenceEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+          _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+          _valueMeta, value.isAcceptableOrUnknown(data['value']!, _valueMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  PreferenceEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PreferenceEntry(
+      key: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      value: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}value']),
+    );
+  }
+
+  @override
+  $PreferenceEntriesTable createAlias(String alias) {
+    return $PreferenceEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class PreferenceEntry extends DataClass implements Insertable<PreferenceEntry> {
+  final String key;
+  final String? value;
+  const PreferenceEntry({required this.key, this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<String>(value);
+    }
+    return map;
+  }
+
+  PreferenceEntriesCompanion toCompanion(bool nullToAbsent) {
+    return PreferenceEntriesCompanion(
+      key: Value(key),
+      value:
+          value == null && nullToAbsent ? const Value.absent() : Value(value),
+    );
+  }
+
+  factory PreferenceEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PreferenceEntry(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String?>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String?>(value),
+    };
+  }
+
+  PreferenceEntry copyWith(
+          {String? key, Value<String?> value = const Value.absent()}) =>
+      PreferenceEntry(
+        key: key ?? this.key,
+        value: value.present ? value.value : this.value,
+      );
+  PreferenceEntry copyWithCompanion(PreferenceEntriesCompanion data) {
+    return PreferenceEntry(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreferenceEntry(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PreferenceEntry &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class PreferenceEntriesCompanion extends UpdateCompanion<PreferenceEntry> {
+  final Value<String> key;
+  final Value<String?> value;
+  final Value<int> rowid;
+  const PreferenceEntriesCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PreferenceEntriesCompanion.insert({
+    required String key,
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : key = Value(key);
+  static Insertable<PreferenceEntry> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PreferenceEntriesCompanion copyWith(
+      {Value<String>? key, Value<String?>? value, Value<int>? rowid}) {
+    return PreferenceEntriesCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreferenceEntriesCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$CacheDatabase extends GeneratedDatabase {
   _$CacheDatabase(QueryExecutor e) : super(e);
   $CacheDatabaseManager get managers => $CacheDatabaseManager(this);
@@ -2263,12 +2455,20 @@ abstract class _$CacheDatabase extends GeneratedDatabase {
   late final $CacheEntriesTable cacheEntries = $CacheEntriesTable(this);
   late final $CartLinesTable cartLines = $CartLinesTable(this);
   late final $CachedOrdersTable cachedOrders = $CachedOrdersTable(this);
+  late final $PreferenceEntriesTable preferenceEntries =
+      $PreferenceEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [cachedCategories, cachedProducts, cacheEntries, cartLines, cachedOrders];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        cachedCategories,
+        cachedProducts,
+        cacheEntries,
+        cartLines,
+        cachedOrders,
+        preferenceEntries
+      ];
 }
 
 typedef $$CachedCategoriesTableCreateCompanionBuilder
@@ -3381,6 +3581,136 @@ typedef $$CachedOrdersTableProcessedTableManager = ProcessedTableManager<
     ),
     CachedOrder,
     PrefetchHooks Function()>;
+typedef $$PreferenceEntriesTableCreateCompanionBuilder
+    = PreferenceEntriesCompanion Function({
+  required String key,
+  Value<String?> value,
+  Value<int> rowid,
+});
+typedef $$PreferenceEntriesTableUpdateCompanionBuilder
+    = PreferenceEntriesCompanion Function({
+  Value<String> key,
+  Value<String?> value,
+  Value<int> rowid,
+});
+
+class $$PreferenceEntriesTableFilterComposer
+    extends Composer<_$CacheDatabase, $PreferenceEntriesTable> {
+  $$PreferenceEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnFilters(column));
+}
+
+class $$PreferenceEntriesTableOrderingComposer
+    extends Composer<_$CacheDatabase, $PreferenceEntriesTable> {
+  $$PreferenceEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+      column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get value => $composableBuilder(
+      column: $table.value, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PreferenceEntriesTableAnnotationComposer
+    extends Composer<_$CacheDatabase, $PreferenceEntriesTable> {
+  $$PreferenceEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$PreferenceEntriesTableTableManager extends RootTableManager<
+    _$CacheDatabase,
+    $PreferenceEntriesTable,
+    PreferenceEntry,
+    $$PreferenceEntriesTableFilterComposer,
+    $$PreferenceEntriesTableOrderingComposer,
+    $$PreferenceEntriesTableAnnotationComposer,
+    $$PreferenceEntriesTableCreateCompanionBuilder,
+    $$PreferenceEntriesTableUpdateCompanionBuilder,
+    (
+      PreferenceEntry,
+      BaseReferences<_$CacheDatabase, $PreferenceEntriesTable, PreferenceEntry>
+    ),
+    PreferenceEntry,
+    PrefetchHooks Function()> {
+  $$PreferenceEntriesTableTableManager(
+      _$CacheDatabase db, $PreferenceEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PreferenceEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PreferenceEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PreferenceEntriesTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<String?> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PreferenceEntriesCompanion(
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String key,
+            Value<String?> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PreferenceEntriesCompanion.insert(
+            key: key,
+            value: value,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PreferenceEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$CacheDatabase,
+    $PreferenceEntriesTable,
+    PreferenceEntry,
+    $$PreferenceEntriesTableFilterComposer,
+    $$PreferenceEntriesTableOrderingComposer,
+    $$PreferenceEntriesTableAnnotationComposer,
+    $$PreferenceEntriesTableCreateCompanionBuilder,
+    $$PreferenceEntriesTableUpdateCompanionBuilder,
+    (
+      PreferenceEntry,
+      BaseReferences<_$CacheDatabase, $PreferenceEntriesTable, PreferenceEntry>
+    ),
+    PreferenceEntry,
+    PrefetchHooks Function()>;
 
 class $CacheDatabaseManager {
   final _$CacheDatabase _db;
@@ -3395,4 +3725,6 @@ class $CacheDatabaseManager {
       $$CartLinesTableTableManager(_db, _db.cartLines);
   $$CachedOrdersTableTableManager get cachedOrders =>
       $$CachedOrdersTableTableManager(_db, _db.cachedOrders);
+  $$PreferenceEntriesTableTableManager get preferenceEntries =>
+      $$PreferenceEntriesTableTableManager(_db, _db.preferenceEntries);
 }

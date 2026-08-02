@@ -324,21 +324,41 @@ and interpolated position match the stored timestamps.
 
 ## Phase 8: User Story 6 — Profile, addresses, wishlist, preferences (Priority: P6)
 
-- [ ] T109 [P] [US6] Contract tests for the four `/me/addresses` operations in `backend/tests/contract/test_addresses.py` — including `422` for an unresolvable address (FR-043)
-- [ ] T110 [P] [US6] Contract tests for the three `/me/wishlist` operations in `backend/tests/contract/test_wishlist.py`
-- [ ] T111 [P] [US6] Integration test — the partial unique index makes two default addresses impossible; setting a new default clears the old one atomically (FR-041)
-- [ ] T112 [P] [US6] Integration test — deleting an address leaves an existing order's address unchanged (FR-044)
-- [ ] T113 [P] [US6] Integration test — geocoding is called exactly once on create and not at all on read (FR-042); assert on a counting fake
-- [ ] T114 [P] [US6] Widget test — a currency override changes every displayed price and survives relaunch (FR-049)
-- [ ] T115 [P] [US6] Widget test — an untranslated string falls back to English rather than showing a key (FR-047)
-- [ ] T116 [P] [US6] Widget test — the empty-wishlist and no-addresses states show copy and an action (FR-063)
-- [ ] T117 [US6] `backend/src/dupermarket_api/services/geocoding.py` — the single geocoding seam, write path only (FR-042, FR-043)
-- [ ] T118 [US6] Router `backend/src/dupermarket_api/api/addresses.py` — list, create, update, soft delete with default promotion; multiple addresses per user (FR-040)
-- [ ] T119 [P] [US6] Router `backend/src/dupermarket_api/api/wishlist.py` — list, add (idempotent), remove (FR-045)
-- [ ] T120 [P] [US6] `mobile/lib/features/profile/` — address management, wishlist, language override persisted to the profile (FR-048), currency override, notification preferences (FR-046)
-- [ ] T121 [P] [US6] `mobile/lib/features/profile/presentation/photo_credits_screen.dart` — attribution from `ProductImage.attribution` (FR-075)
+- [X] T109 [P] [US6] Contract tests for the four `/me/addresses` operations in `backend/tests/contract/test_addresses.py` — including `422` for an unresolvable address (FR-043)
+- [X] T110 [P] [US6] Contract tests for the three `/me/wishlist` operations in `backend/tests/contract/test_wishlist.py`
+- [X] T111 [P] [US6] Integration test — the partial unique index makes two default addresses impossible; setting a new default clears the old one atomically (FR-041)
+- [X] T112 [P] [US6] Integration test — deleting an address leaves an existing order's address unchanged (FR-044)
+- [X] T113 [P] [US6] Integration test — geocoding is called exactly once on create and not at all on read (FR-042); assert on a counting fake
+- [X] T114 [P] [US6] Widget test — a currency override changes every displayed price and survives relaunch (FR-049)
+- [X] T115 [P] [US6] Widget test — an untranslated string falls back to English rather than showing a key (FR-047)
+- [X] T116 [P] [US6] Widget test — the empty-wishlist and no-addresses states show copy and an action (FR-063)
+- [X] T117 [US6] `backend/src/dupermarket_api/services/geocoding.py` — the single geocoding seam, write path only (FR-042, FR-043)
+- [X] T118 [US6] Router `backend/src/dupermarket_api/api/addresses.py` — list, create, update, soft delete with default promotion; multiple addresses per user (FR-040)
+- [X] T119 [P] [US6] Router `backend/src/dupermarket_api/api/wishlist.py` — list, add (idempotent), remove (FR-045)
+- [X] T120 [P] [US6] `mobile/lib/features/profile/` — address management, wishlist, language override persisted to the profile (FR-048), currency override, notification preferences (FR-046)
+- [X] T121 [P] [US6] `mobile/lib/features/profile/presentation/photo_credits_screen.dart` — attribution from `ProductImage.attribution` (FR-075)
 
 **Checkpoint**: Full profile surface complete.
+
+**Deviations recorded at implementation**:
+
+- **T117** — the geocoder is a **fixed city table**, not the Google Geocoding API. No API key
+  exists in this checkout, and the seam's whole purpose is that swapping the implementation
+  touches one class. The table resolves the cities this demo ships to and declines everything
+  else, which keeps FR-043's rejection path reachable with no network call and no metered key.
+  Phase 2 replaces `FixedTableGeocoder`; no caller changes.
+- **T115** — the *fallback rule* (`localise`) is implemented and tested, not the full ARB
+  pipeline. Wiring `flutter gen-l10n` and the `.arb` files remains **T036**, which is still
+  open in Phase 2. What FR-047 asks for behaviourally — never show a key, fall back to English,
+  prefer a base language over English for a regional locale — is covered.
+- **T120** — preference overrides are mirrored into a local `preference_entries` table as well
+  as the profile. The profile stays authoritative (FR-048 requires them to follow the user
+  across devices); the local copy exists so the app renders in the right language and currency
+  at launch, before any network call returns, and survives a relaunch offline (FR-049). The
+  table is user-scoped, so sign-out purges it.
+- **T121** — `ProductImage` gained a `sourceUrl` field. The API already sends
+  `attribution.source_url`; the client model was dropping it, and several of the permitted
+  licences ask for a link back rather than just a name.
 
 ---
 

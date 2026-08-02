@@ -142,7 +142,13 @@ class ProductSummary {
 
 @immutable
 class ProductImage {
-  const ProductImage({required this.url, required this.altText, this.photographer, this.source});
+  const ProductImage({
+    required this.url,
+    required this.altText,
+    this.photographer,
+    this.source,
+    this.sourceUrl,
+  });
 
   final String url;
   final String altText;
@@ -151,6 +157,10 @@ class ProductImage {
   final String? photographer;
   final String? source;
 
+  /// Where the original lives. Several of the permitted licences ask for a link back, not just
+  /// a name, so the credits screen needs it to comply rather than merely acknowledge.
+  final String? sourceUrl;
+
   static ProductImage fromJson(Map<String, dynamic> json) {
     final Object? attribution = json['attribution'];
     return ProductImage(
@@ -158,6 +168,8 @@ class ProductImage {
       altText: json['alt_text'] as String? ?? '',
       photographer:
           attribution is Map<String, dynamic> ? attribution['photographer'] as String? : null,
+      sourceUrl:
+          attribution is Map<String, dynamic> ? attribution['source_url'] as String? : null,
       source: attribution is Map<String, dynamic> ? attribution['source'] as String? : null,
     );
   }

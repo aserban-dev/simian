@@ -127,8 +127,32 @@ class CachedOrders extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// The signed-in user's preference overrides (FR-048, FR-049, T120).
+///
+/// Stored locally as well as on the profile, for two reasons: the app has to render in the
+/// right language and currency on launch, before any network call returns; and the override
+/// must survive a restart with no connection at all.
+///
+/// The profile remains the source of truth — FR-048 requires the override to follow the user
+/// across devices — so these rows are a local mirror, and they are user-scoped: the next person
+/// to sign in on this device must not inherit them.
+class PreferenceEntries extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{key};
+}
+
 @DriftDatabase(
-  tables: <Type>[CachedCategories, CachedProducts, CacheEntries, CartLines, CachedOrders],
+  tables: <Type>[
+    CachedCategories,
+    CachedProducts,
+    CacheEntries,
+    CartLines,
+    CachedOrders,
+    PreferenceEntries,
+  ],
 )
 class CacheDatabase extends _$CacheDatabase {
   CacheDatabase(super.executor);
@@ -137,8 +161,9 @@ class CacheDatabase extends _$CacheDatabase {
   ///
   /// 2: added `cart_lines` (US3).
   /// 3: added `cached_orders` (US5).
+  /// 4: added `preference_entries` (US6).
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -150,8 +175,10 @@ class CacheDatabase extends _$CacheDatabase {
           //
           // The cart is not dropped, and must never be: it is local-authoritative (FR-019), so
           // there is nowhere to re-fetch it from. Throwing it away on an app update would delete
-          // something the user created. `createAll` adds any table that does not exist yet, so
-          // arriving here from schema 1 is what creates `cart_lines`.
+          // something the user created. Preference overrides are kept for the same reason —
+          // the profile has them too, but the app must render correctly before that arrives.
+          // `createAll` adds any table that does not exist yet, so arriving here from an older
+          // schema is what creates the newer tables.
           for (final TableInfo<Table, Object?> table in publicTables) {
             await m.deleteTable(table.actualTableName);
           }
@@ -168,6 +195,7 @@ class CacheDatabase extends _$CacheDatabase {
   List<TableInfo<Table, Object?>> get userScopedTables => <TableInfo<Table, Object?>>[
         cartLines,
         cachedOrders,
+        preferenceEntries,
       ];
 
   /// Tables holding public data, which survives sign-out.
