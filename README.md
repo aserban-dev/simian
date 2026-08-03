@@ -16,7 +16,9 @@ lives in a document before it lives in code.
 | `specs/001-shopping-app-simulator/` | The feature: spec, plan, research, data model, API contract, tasks, analysis |
 | `.claude/skills/speckit-*/` | The spec-kit workflow skills, plus a project-specific `speckit-verify` |
 | `scripts/check_traceability.py` | The verification gate: requirement coverage and the simulation boundary |
-| `backend/`, `mobile/`, `seed/` | Application code — scaffolding today, filled in by `/speckit-implement` |
+| `backend/` | FastAPI resource server — all 19 contract operations |
+| `mobile/` | Flutter client — catalogue, auth, cart, checkout, delivery map, history, profile |
+| `seed/` | Catalogue seed pipeline — ingest, normalise, price, images, verify |
 
 Start with [the spec](specs/001-shopping-app-simulator/spec.md), then
 [the plan](specs/001-shopping-app-simulator/plan.md). Setup and test instructions are in
@@ -34,21 +36,36 @@ whole test suite, checks contract coverage against the OpenAPI document, verifie
 requirement maps to a passing test, and scans for anything that would breach the simulation
 boundary.
 
-Status: everything through `/speckit-analyze` is done — zero critical findings, so
-`/speckit-implement` is unblocked.
+Status: phases 1–12 implemented. The API contract is fully covered (19/19 operations) and the
+traceability gate passes. What remains needs credentials or a device — see
+**[What is not done](#what-is-not-done)**.
 
-## Verification, today
-
-The gate runs before the application exists, and reports honestly on what it cannot yet check:
+## Running it
 
 ```bash
-python3 scripts/check_traceability.py                    # requirement coverage + Principle I
-cd backend && uv run --with pytest --with pyyaml \
-  --with openapi-spec-validator pytest tests -q          # contract tests, no server needed
-cd mobile && flutter test                                # client harness
-uvx --from openapi-spec-validator openapi-spec-validator \
-  specs/001-shopping-app-simulator/contracts/openapi.yaml
+docker compose up -d postgres          # the database the integration tests need
+
+cd backend && uv sync --extra dev
+uv run alembic upgrade head
+uv run uvicorn dupermarket_api.main:create_app --factory --reload
+
+cd ../mobile && flutter pub get && flutter run
 ```
+
+`.env.example` lists every variable. The API refuses to start with a required one missing.
+
+## Verification
+
+```bash
+python3 scripts/check_traceability.py     # requirement coverage + the simulation boundary
+cd backend && uv run pytest tests -q      # unit, contract and integration
+cd backend && uv run pytest -m performance -q   # search-latency benchmark (SC-002)
+cd seed    && uv run --extra dev pytest -q
+cd mobile  && flutter test && flutter analyze
+```
+
+Benchmarks are excluded from the default backend run: they seed thousands of rows, and a suite
+people skip because it is slow protects nothing.
 
 The contract tests assert the properties that are cheapest to state and easiest to erode: no
 payment field anywhere in the API, only catalogue reads are public, another user's resource
@@ -65,3 +82,22 @@ enforces it rather than trusting anyone to remember.
 
 **Test-first.** Tests are written before the code they cover, and every functional requirement
 is machine-checked to have one. The traceability gate is built in Phase 2, before any feature.
+
+## What is not done
+
+Everything below needs a credential or a physical device, and none of it is stubbed out
+pretending otherwise. Each is recorded against its task in
+[tasks.md](specs/001-shopping-app-simulator/tasks.md).
+
+| Area | Why it is outstanding |
+|---|---|
+| Firebase sign-in | No Firebase project. `AuthGateway` is implemented and tested behind a fake; `Firebase.initializeApp()` is deliberately not called, since it crashes without config |
+| Google Maps rendering | No Maps API key. The map's geometry — markers, polyline, parcel position — is asserted; the platform view cannot render in a test |
+| Local notifications | No plugin wired. The scheduling rules are pure functions behind `NotificationPlatform` and fully tested |
+| Live geocoding | No API key. `FixedTableGeocoder` resolves the cities this demo ships to and declines the rest, which keeps FR-043's rejection path reachable |
+| Pexels image pools | `PEXELS_API_KEY` is unset. `images/openverse.py` is a keyless alternative that carries a per-image licence |
+| R2 upload | No bucket credentials. The uploader is exercised against a recording stand-in, including the zero-upload re-run |
+| Cached-paint benchmark, manual smoke walk | Need a running app on a device |
+
+The seed pipeline's image stages *have* been run on real bytes: images downloaded, processed to
+WebP with EXIF stripped, hashed, and re-run to confirm the second pass uploads nothing.

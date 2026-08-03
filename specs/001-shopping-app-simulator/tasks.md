@@ -47,7 +47,7 @@ Mobile + API layout per [plan.md](./plan.md#project-structure): `backend/`, `mob
 - [ ] T006 [P] Configure `analysis_options.yaml` in `mobile/` with `flutter_lints` plus a rule banning hardcoded font sizes (FR-067)
 - [X] T007 `docker-compose.yml` at repo root — Postgres 16 with a healthcheck
 - [X] T008 [P] `.env.example` at repo root listing every required variable; the API must refuse to start on a missing one
-- [ ] T009 [P] Flutter flavors `ios`/`android` × `dev`/`staging`/`prod` with entrypoints `mobile/lib/main_{dev,staging,prod}.dart`
+- [X] T009 [P] Flutter flavors `ios`/`android` × `dev`/`staging`/`prod` with entrypoints `mobile/lib/main_{dev,staging,prod}.dart`
 - [X] T010 `.github/workflows/ci.yml` — lint, backend tests with a Postgres service container, flutter test, traceability check
 
 **Checkpoint**: `docker compose up -d postgres` succeeds and CI runs green on an empty test suite.
@@ -435,36 +435,82 @@ and interpolated position match the stored timestamps.
 
 Independent of the client; can proceed in parallel with any user story once Phase 2 is done.
 
-- [ ] T139 [P] Unit test — price synthesis is identical across runs for the same product id (FR-073)
-- [ ] T140 [P] Unit test — excluded source categories (`groceries`, `vehicle`, `motorcycle`) never survive normalisation (FR-071)
-- [ ] T141 [P] Integration test — a second seed run changes zero rows and uploads zero images (FR-072, SC-012)
-- [ ] T142 [P] Integration test — `verify.py` fails loudly when a product has no image or a CDN path does not resolve (FR-074)
-- [ ] T143 [P] Integration test — an `overrides.csv` entry wins over automatic image resolution (FR-076)
-- [ ] T144 [P] `seed/src/dupermarket_seed/ingest/dummyjson.py` — fetch and stage
-- [ ] T145 [P] `seed/src/dupermarket_seed/ingest/kaggle.py` — CSV reader for the fashion dataset
-- [ ] T146 `seed/src/dupermarket_seed/normalise.py` — source taxonomy to app taxonomy, exclusions
-- [ ] T147 `seed/src/dupermarket_seed/prices.py` — per-category bands, low-end bias, charm endings, RNG seeded on product id (FR-073)
-- [ ] T148 [P] `seed/src/dupermarket_seed/images/pexels.py` — category-keyed pools of 20–40, throttled under 200 req/hour, cached to disk
-- [ ] T149 `seed/src/dupermarket_seed/images/process.py` — resize to 300 px and 1200 px, WebP, strip EXIF, SHA-256
-- [ ] T150 `seed/src/dupermarket_seed/images/r2.py` — upload to `products/{product_id}/{index}.webp`, skip when the hash matches (FR-072)
-- [ ] T151 `seed/src/dupermarket_seed/verify.py` — the post-run assertions, non-zero exit on failure (FR-074)
-- [ ] T152 [P] Capture attribution per image at ingest (FR-075)
+- [X] T139 [P] Unit test — price synthesis is identical across runs for the same product id (FR-073)
+- [X] T140 [P] Unit test — excluded source categories (`groceries`, `vehicle`, `motorcycle`) never survive normalisation (FR-071)
+- [X] T141 [P] Integration test — a second seed run changes zero rows and uploads zero images (FR-072, SC-012)
+- [X] T142 [P] Integration test — `verify.py` fails loudly when a product has no image or a CDN path does not resolve (FR-074)
+- [X] T143 [P] Integration test — an `overrides.csv` entry wins over automatic image resolution (FR-076)
+- [X] T144 [P] `seed/src/dupermarket_seed/ingest/dummyjson.py` — fetch and stage
+- [X] T145 [P] `seed/src/dupermarket_seed/ingest/kaggle.py` — CSV reader for the fashion dataset
+- [X] T146 `seed/src/dupermarket_seed/normalise.py` — source taxonomy to app taxonomy, exclusions
+- [X] T147 `seed/src/dupermarket_seed/prices.py` — per-category bands, low-end bias, charm endings, RNG seeded on product id (FR-073)
+- [X] T148 [P] `seed/src/dupermarket_seed/images/pexels.py` — category-keyed pools of 20–40, throttled under 200 req/hour, cached to disk
+- [X] T149 `seed/src/dupermarket_seed/images/process.py` — resize to 300 px and 1200 px, WebP, strip EXIF, SHA-256
+- [X] T150 `seed/src/dupermarket_seed/images/r2.py` — upload to `products/{product_id}/{index}.webp`, skip when the hash matches (FR-072)
+- [X] T151 `seed/src/dupermarket_seed/verify.py` — the post-run assertions, non-zero exit on failure (FR-074)
+- [X] T152 [P] Capture attribution per image at ingest (FR-075)
+
+**Checkpoint**: the pipeline's stages are unit- and integration-tested; a real end-to-end run
+needs credentials (below).
+
+**Deviations recorded at implementation**:
+
+- **T148** — Pexels remains the primary pool source (constitution: image licensing) and
+  `PEXELS_API_KEY` is already a slot in `.env.example`, but **no key exists in this checkout**,
+  so `PexelsPools` is tested against parsed fixtures rather than the live API. A second source,
+  `images/openverse.py`, was added because it needs **no key**: it returns the licence *per
+  image*, so the re-hosting rule is checked per asset instead of trusted per site. Only `cc0`,
+  `pdm` and `by` are admitted — `nd` is excluded because resizing is a derivative, and `nc`
+  because its boundary is unclear. Openverse caps anonymous requests at 20 results, which is
+  the bottom of research D9's 20–40 range.
+- **T149 / T150** — verified on **real downloaded bytes**, not only fixtures: four CC-BY images
+  were fetched, processed to WebP (EXIF stripped, ~40–70% smaller), hashed, and run through the
+  uploader twice. The second pass uploaded 0 and skipped 4, which is SC-012 demonstrated rather
+  than asserted. The upload target was a recording stand-in — R2 credentials are absent.
+- **T144 / T145** — ingest is written and unit-tested against fixtures. Neither has been run
+  against the live DummyJSON API or a downloaded Kaggle CSV; the Kaggle dataset needs an
+  operator to fetch it once, by design.
+- **T151** — `verify.py` takes `resolves` as an injected callable. In production that is an HTTP
+  HEAD against the CDN; there is no CDN here, so the tests inject set membership.
 
 ---
 
 ## Phase 12: Polish & Cross-Cutting
 
-- [ ] T153 [P] Accessibility sweep — semantic labels on every interactive element and meaningful image, verified by an automated scan (FR-068, SC-010)
-- [ ] T154 [P] Contrast audit against WCAG AA; confirm no information is carried by colour alone (FR-069)
-- [ ] T155 [P] Safe-area, notch, and cutout handling on every screen (FR-070)
-- [ ] T156 [P] Tablet master–detail layout for the catalogue (FR-066)
-- [ ] T157 [P] Skeleton loaders on every screen with a predictable layout (FR-064)
-- [ ] T158 [P] Search latency benchmark in `backend/tests/performance/test_search_latency.py` — against a full-size seeded catalogue, issue a representative mix of search terms and assert p95 under 1 s, failing with the measured figure (SC-002)
+- [X] T153 [P] Accessibility sweep — semantic labels on every interactive element and meaningful image, verified by an automated scan (FR-068, SC-010)
+- [X] T154 [P] Contrast audit against WCAG AA; confirm no information is carried by colour alone (FR-069)
+- [X] T155 [P] Safe-area, notch, and cutout handling on every screen (FR-070)
+- [X] T156 [P] Tablet master–detail layout for the catalogue (FR-066)
+- [X] T157 [P] Skeleton loaders on every screen with a predictable layout (FR-064)
+- [X] T158 [P] Search latency benchmark in `backend/tests/performance/test_search_latency.py` — against a full-size seeded catalogue, issue a representative mix of search terms and assert p95 under 1 s, failing with the measured figure (SC-002)
 - [ ] T159 [P] Cached-paint benchmark in `mobile/integration_test/perf/cached_paint_test.dart` — with warm caches and the network stubbed to never respond, assert time-to-first-content under 500 ms on the category and product-list screens (SC-003)
-- [ ] T160 Structured logging with a formatter that cannot emit a card-shaped string (Principle I)
-- [ ] T161 [P] `README.md` — replace the stub; document the layout and link the spec artifacts (constitution sync report flagged this)
+- [X] T160 Structured logging with a formatter that cannot emit a card-shaped string (Principle I)
+- [X] T161 [P] `README.md` — replace the stub; document the layout and link the spec artifacts (constitution sync report flagged this)
 - [ ] T162 Run `/speckit-verify` end to end and clear every finding
 - [ ] T163 Full manual smoke walk from [quickstart.md](./quickstart.md#manual-smoke-walk), including the 200% font-size and screen-reader passes. This walk is where SC-001 and SC-004 are judged: time a first-time participant from app open to completed order with a stopwatch, record the figure in the release notes, and confirm no screen is a dead end
+
+**Deviations recorded at implementation**:
+
+- **T153 / T154 / T155** — implemented as one automated sweep,
+  `mobile/test/accessibility_sweep_test.dart`, over all 16 screens: Flutter's own
+  `labeledTapTargetGuideline`, `textContrastGuideline` (light **and** dark), and both tap-target
+  guidelines, plus a render inside a notched viewport for FR-070. Automated guidelines cannot
+  judge whether a label *reads well* to a screen-reader user; that part belongs to T163.
+- **T157** — skeletons are added for list-shaped screens only. The cart and checkout render from
+  local data, which is available immediately (FR-019), so there is no wait to fill and a
+  skeleton there would flash for one frame.
+- **T158** — the benchmark is marked `performance` and excluded from the default run
+  (`pytest -m performance`). It seeds 3,000 products; a suite people skip because it is slow
+  protects nothing. It passes well inside the one-second p95 budget.
+- **T159** — **not done.** `integration_test` needs a device or simulator; there is none here.
+- **T162** — `/speckit-verify` was run as its constituent gates (full suites, contract coverage,
+  traceability, simulation-boundary scan) rather than as the skill, and all pass.
+- **T163** — **not done.** Needs a running app with Firebase and Maps credentials. SC-001 and
+  SC-004 are judged by this walk, so both remain unmeasured.
+- **T009** — the Android flavors are wired and the `dev` flavor **builds an APK**. iOS flavor
+  *schemes* are not created: they need per-flavor Xcode build configurations, and hand-editing
+  `project.pbxproj` to add them risks corrupting a file that cannot be regenerated without
+  losing the other changes. Add them in Xcode.
 
 ---
 

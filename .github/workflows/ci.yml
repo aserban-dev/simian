@@ -87,6 +87,9 @@ jobs:
           uv run pytest tests/integration -q --no-header -rN 2>&1 | tee /tmp/int.log
           grep -qE '[0-9]+ passed' /tmp/int.log || { echo "integration suite did not run"; exit 1; }
           grep -qE '[0-9]+ skipped' /tmp/int.log && { echo "integration tests skipped in CI"; exit 1; } || true
+      - name: Search latency benchmark (SC-002)
+        working-directory: backend
+        run: uv run pytest -m performance -q
       - name: Migrations apply and are reversible
         working-directory: backend
         env:
@@ -111,13 +114,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
-      - working-directory: seed
+      - name: Lint and test the seed pipeline
+        working-directory: seed
         run: |
-          if [ -d tests ] && [ -n "$(find tests -name 'test_*.py' -print -quit)" ]; then
-            uv run --with pytest pytest tests -q
-          else
-            echo "no seed tests yet — arrive with /speckit-implement (T139-T143)"
-          fi
+          uv run --extra dev ruff check .
+          uv run --extra dev ruff format --check .
+          uv run --extra dev pytest -q
 
   mobile:
     name: Flutter tests

@@ -102,6 +102,24 @@ CARD_LITERAL_ALLOWLIST = {
     "mobile/lib/features/checkout/demo_cards.dart",
 }
 
+# An inline, per-line exemption for code whose *purpose* is to recognise card data in order to
+# destroy it — a redactor naming `cvv` is the opposite of a violation, but it looks identical to
+# a regex.
+#
+# Deliberately per line rather than per file: a file-level allowlist would exempt everything
+# else in that file too, and the whole value of this scan is that exemptions are visible. Each
+# use has to sit on the offending line, where a reviewer reading the diff cannot miss it.
+BOUNDARY_PRAGMA = "principle-i-allow:"
+
+
+def _exempt_lines(text: str) -> set[int]:
+    """1-indexed line numbers carrying the inline exemption pragma."""
+    return {
+        number
+        for number, line in enumerate(text.splitlines(), start=1)
+        if BOUNDARY_PRAGMA in line
+    }
+
 
 @dataclass
 class Result:
@@ -245,8 +263,12 @@ def check_simulation_boundary(root: Path, source_dirs: list[str]) -> Result:
                 f"{rel}:{line_no}: payment processor import — {match.group(0).strip()!r}"
             )
 
+        exempt = _exempt_lines(text)
+
         for match in CARD_FIELD_NAMES.finditer(text):
             line_no = text[: match.start()].count("\n") + 1
+            if line_no in exempt:
+                continue
             violations.append(
                 f"{rel}:{line_no}: payment card field name — {match.group(0)!r}"
             )
@@ -257,6 +279,8 @@ def check_simulation_boundary(root: Path, source_dirs: list[str]) -> Result:
                 if len(digits) < 13:
                     continue
                 line_no = text[: match.start()].count("\n") + 1
+                if line_no in exempt:
+                    continue
                 violations.append(
                     f"{rel}:{line_no}: card-shaped literal ({len(digits)} digits). "
                     f"Only {sorted(CARD_LITERAL_ALLOWLIST)[0]} may contain one."

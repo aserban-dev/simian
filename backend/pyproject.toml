@@ -35,12 +35,15 @@ packages = ["src/dupermarket_api"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]  # "." so tests/ helper modules are importable
-addopts = "-ra --strict-markers"
+# Benchmarks are opt-in: they seed thousands of rows, and a suite people skip because it is slow
+# protects nothing. Run them with `pytest -m performance`.
+addopts = "-ra --strict-markers -m 'not performance'"
 asyncio_mode = "auto"
 markers = [
     "contract: asserts the published API contract",
     "integration: needs a live database",
     "unit: pure, no I/O",
+    "performance: benchmarks against a full-size catalogue; slow, excluded by default",
 ]
 
 [tool.ruff]
