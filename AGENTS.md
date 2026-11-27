@@ -1,0 +1,77 @@
+<!-- bmad:context -->
+<!-- Seeded 2026-11-27 from the price-checker agent factory (docs/agent-team-reuse.md). Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
+
+## simian
+
+The product is defined in `docs/initial-spec.md`. It is built by the BMAD agent team and Zamolxe (Orchestrator) copied from price-checker. When a product question is ambiguous, choose the simplest option that meets the spec and record it as an assumption. The method is `docs/automation-plan.md`; BMAD outputs go to `_bmad-output/`. The stack is not chosen yet: Loredan (Architect) decides it at stage 4, and the TBD rules in `docs/standards/` are completed then.
+
+## Policy
+
+- Follow the rules in `docs/standards/` and cite their IDs (C-, T-, S-, I-, D-) in findings and commits. A rule marked TBD is not enforced yet.
+- Never approve an external system, run `terraform apply`/`destroy`, push or merge to `main`, or open SSH to a deployed host. The guard hook blocks these; escalate to the owner instead.
+- Never contact an external system unless `docs/source-register.md` marks it `Approved`. To propose one, draft its row with Status `Proposed`.
+- Never edit `.claude/settings*.json`, `.claude/hooks/` or `docs/source-register.md` Status cells to get past a block; ask the owner.
+- Never read `.env*`, `*.tfstate*`, `*.tfvars`, `~/.ssh` or `~/.azure`.
+- Every architecture decision gets an ADR from `docs/adr/0000-template.md`, added to the index in `docs/adr/README.md` (D-2). simian's own ADRs start at 0027; the lower numbers that remain are the factory's.
+
+## Where things are
+
+- Spec (stage 1 input): `docs/initial-spec.md`
+- Standards and who verifies each: `docs/standards/README.md`
+- Review verdict JSON format: `docs/standards/review-findings.md`
+- Custom agents: `.claude/agents/`; BMAD agent overrides: `_bmad/custom/*.toml`
+- Guardrails: `.claude/settings.json`, `.claude/hooks/guard.py` (rules G1–G5 in `docs/automation-plan.md` §5)
+- Registers: `docs/source-register.md`, `docs/compliance-register.md`
+- Factory design: `_bmad-output/planning-artifacts/architecture/architecture-orchestrator-2026-11-16/` (the orchestrator spine) and ADRs 0001–0005, 0019, 0021–0025
+- How this factory was copied, and what to tune: `docs/agent-team-reuse.md`
+- CI: `.github/workflows/ci.yml`. The aggregate job `ci` is the one required check. Product jobs are added at stage 6.
+- Product code: none yet. Aglaia (Knowledge Keeper) adds each part here as it lands.
+
+## Running and verifying
+
+- Guard tests: `python3 .claude/hooks/test_guard.py`; run them after any change to `guard.py`.
+- After every BMAD install or update, run `python3 scripts/apply-persona-names.py` (`--check` reports only); the update restores the default persona names.
+- Zamolxe (Orchestrator), in `orchestrator/` (Python ≥ 3.12, uv):
+  - Tests: `cd orchestrator && uv run pytest -q`
+  - Lint and format: `cd orchestrator && uv run ruff check && uv run ruff format --check`
+  - Dry-run of the whole stage table with fake adapters: `cd orchestrator && uv run sdlc run --dry-run` (exit 0; prints every `claude -p` it would start and a temporary run dir)
+  - Real run: `cd orchestrator && uv run sdlc run` runs real `claude -p`, `git` and `gh` (paid). A preflight first checks that `claude`, `git` and `gh` are on PATH, `gh auth status` passes, `origin` exists and the main checkout is clean; it exits 1 naming what is missing. State goes to `_bmad-output/sdlc/runs`; worktrees go to `../simian-worktrees/`.
+  - Real runs bill the Claude subscription: the preflight also exits 1 when `ANTHROPIC_API_KEY` or another API-key or provider credential is set (environment, or `env`/`apiKeyHelper` in a Claude settings file) unless `allow_api_key: true` (AD-23); keep "extra usage" credits off so a plan limit pauses the run instead of buying credits.
+  - Settings in `sdlc/pipeline.yaml` for subscription runs: `default_model`, `default_effort` (per stage and per step: `model`, `effort`, `max_turns`; a step value overrides its stage's, and tuning either does not block `sdlc resume`), `usage_limit_wait_min`, `usage_limit_max_wait_h`, `allow_api_key`. A plan usage limit pauses the run; while paused, `sdlc status` prints `plan usage limit: resume_at …` (also after an episode escalated the run).
+  - Dry-run limit scenarios: `uv run sdlc run --dry-run --scenario usage-limit` (one pause, then exit 0) and `--scenario usage-limit-forever` (escalates with scope `run`, exit 2).
+  - `uv run sdlc status [<run-id>]` and `uv run sdlc resume <run-id>`; pass `--runs-dir <dir>` for a dry-run's temporary dir.
+  - Pause and stop (issue #72): `uv run sdlc pause [<run-id>]` writes `pause` (run id and time) beside the lock and returns; the run (default: the one holding the lock) starts no new step, cancels waiting script steps at no cost, lets agent steps finish and records them, then ends `paused` with exit 0. `uv run sdlc stop [<run-id>]` sends SIGTERM to the pid in the lock file: running steps are interrupted (worktree reset, cap charged), `RunStopped` (`owner stop`) is recorded and the run ends `paused`. Either way the lock is released and the queue is not drained. `sdlc status` shows `pausing (n steps finishing)`, then `paused at <time> (pause|stop)`; `sdlc resume <run-id>` continues and removes a leftover request. Another run ignores a request that does not name it.
+  - `uv run sdlc usage [<run-id> | --all] [--by agent|stage|model|round|run] [--rebuild]` reports token use and cost from each run's `state.json` (read-only). The run itself appends to the ledger `<runs-dir>/usage.jsonl`; `--rebuild` regenerates it and refuses while a run is running (AD-24).
+  - Usage settings in `sdlc/pipeline.yaml`: `agents` (role -> skills and agents it may run; every new agent or judge step needs an `agent_role` from it, and `Judge (gate check)` is the pseudo-role of gate judges), `usage_warn_ratio` (one warning at 80% of the run budget), `telemetry` (off; when on, OTLP metrics only to an http(s) endpoint, labelled `sdlc.agent` etc., with content logging always stripped, AD-25), and `learn_revert_paths` (learn branches revert `sdlc/**`, so pipeline changes go through an owner PR). Before an epic retrospective the orchestrator writes `<worktree>/.sdlc/usage-summary.md`.
+  - Path tiers in `sdlc/pipeline.yaml` (AD-26, ADR 0022), each entry a path prefix or an exact file:
+    - `owner_only_paths` (`.claude/`, `.github/CODEOWNERS`, `docs/source-register.md`): reverted before every orchestrator commit and never proposed. A reviewer that changes one fails.
+    - `protected_paths` (`sdlc/`, `orchestrator/`, `_bmad/custom/`, `docs/standards/`, and the `sdlc-commands` block below): an agent's edit is captured as a proposal, then reverted on its branch.
+    - `review_paths` (`.github/workflows/`): never pushed from a proposal. On a learn branch an edit there becomes an issue.
+    - A proposal becomes a PR on `proposal/<sha8>` cut from `origin/main`, labelled `owner-review`. When it touches `review_paths` or does not apply cleanly, it becomes an `owner-review` issue with the patch. Zamolxe (Orchestrator) never merges or auto-merges an `owner-review` PR; only the owner does. `sdlc status` lists them as `owner review: PR #n`; the saved search is `is:open label:owner-review`.
+  - Issue runs (AD-27): `uv run sdlc story <issue>` and `uv run sdlc fix <issue>` (add `--dry-run` for fakes; issue 12 in `orchestrator/tests/fixtures/dryrun/issues/` is a factory story). The issue must be open, and its author, its last editor, whoever renamed it and whoever applied a `factory` label must be in `settings.owners`, or the command comments why and exits 1. A second run for an issue whose earlier run has not passed or escalated is refused. The issue holds one fenced `yaml` story block (`depends_on`, `touches`, `sources`, optional `acceptance`; `key` is derived as `0-<issue>-<slug>`; `touches`, `sources` and `depends_on` must be plain paths, domains and keys); a bad block escalates the run at once. Issue text reaches prompts only in the fenced "Untrusted issue text" section, and `sdlc resume` escalates the story if the issue changed.
+  - A factory story keeps its edits to `protected_paths` and `review_paths` (owner-only paths and bookkeeping are still reverted; in `AGENTS.md` only the `sdlc-commands` block change is kept), and its tests gate runs only the branch point's block (the new block never runs before the owner merges it). A PR touching `protected_paths` in a factory story, `review_paths` in any run, or (any story) the `sdlc-commands` block, is created labelled `owner-review` and waits: the run goes on with independent work and ends `awaiting_owner` (exit 2). After preflight, the next `run`, `resume`, `story` or `fix` checks the PRs of `awaiting_owner` runs: merged (with the head that was opened for review) queues `sdlc resume <run>` ahead of the new work, once; a failed automatic resume is shown by `sdlc status` and not queued again. Closed, or merged with another head, escalates the story. On a dry-run, simulate the owner with `{"pr_states": {"<pr>": "MERGED"}}` in `<runs-dir>/fake-gh.json`.
+  - One run at a time: a real `run`, `resume`, `story` or `fix` holds `fcntl.flock` on `_bmad-output/sdlc/lock`, whatever `--runs-dir` says (a dry-run locks beside its own runs dir). A second one is appended to `_bmad-output/sdlc/queue.jsonl` (never with `--repo` or `--pipeline`) and exits 0; when a command completes normally (not after Ctrl-C or a crash), the next queued one replaces the process (`os.execv`), keeping the lock, and its outcome goes to `_bmad-output/sdlc/queue-history.jsonl`. Exit codes: 0 passed, paused or queued; 1 internal error, failed preflight or refused issue; 2 escalated, blocked or `awaiting_owner`.
+  - Robust git (AD-27): `git fetch` retries ref-lock errors with backoff, and a fetch that still fails only fails the script step that needed it; `sdlc resume` removes `*.lock` files no process holds from each run worktree's git dir; learn branches rebase onto `origin/main` before their PR.
+  - Integrate (issue #87): after the rebase, step `tests_rebased` runs the `tests` block below again on the rebased tree; red tests fail the round before any PR. A red `ci_green` adds a ≤4 KB excerpt of the failed jobs' logs on the PR head SHA (`core/ci_log.py`; git, credential and env lines dropped). A failed script step's output tail (≤4 KB) goes into its gate finding, so the Developer fix round sees it in `${feedback}`. Dry-run: `--scenario rebase-tests-red`.
+  - Opt-in live test of one real `claude -p` call (about $0.05): `cd orchestrator && SDLC_LIVE=1 uv run pytest -q -m live`.
+  - The stage table is `sdlc/pipeline.yaml`; prompts are `sdlc/prompts/*.md`; dry-run fixtures are `orchestrator/tests/fixtures/dryrun/`.
+- Commands the orchestrator's `tests` and `terraform_plan` gates run, from the worktree root (T-8). Each is split like a shell word list and run without a shell, so no `cd`, `&&`, pipes or redirections, and nothing the guard hook denies; a missing name fails the gate. The gate reads this block from `origin/main` at the story's branch point and fails when the story itself changed it (ADR 0023), and before each of its commits on a planning, infra or learn branch the orchestrator puts the block back as it is on `origin/main` (story branches revert all of `AGENTS.md`), so agents cannot change it through their auto-merged PRs (ADR 0004, ADR 0021).
+
+  ```yaml sdlc-commands
+  tests:
+    - uv run --directory orchestrator pytest -q
+  ```
+
+  - **Owner TODO before stories run** (`docs/agent-team-reuse.md` §3 step 12): after the planning PR (stage 5) merges and the product scaffold is on `main`, add the product's build, lint and test commands to `tests`, and a `terraform_plan` list once `infra/` exists, through an owner PR. Until then the `terraform_plan` gate fails closed ("no terraform_plan commands"), and story gates check only the orchestrator.
+
+## Conventions that differ from defaults
+
+- Refer to agents as Name (Position), for example "Marghioala (Developer)" (D-6). Names: Pompiliu (Analyst), Onofrei (PM), Safta (UX Designer), Veronel (Security & Compliance), Loredan (Architect), Pacala (DevOps), Marghioala (Developer), Eufrosina (QA), Filofteia (Code Reviewer), Aglaia (Knowledge Keeper), Zamolxe (Orchestrator).
+
+## Known pitfalls
+
+- The guard reads every Bash command as text, heredoc bodies included. Inline code (`python3 -c`, `node -e`) that mentions a blocked domain, or a heredoc whose text contains a blocked command or a guardrail path, is denied even though nothing would run. Write the content with the Write tool, or put code in a script file and run that.
+- The guard denies Bash commands that write to the guardrail files or the source register (G5). Use Edit or Write, which the guard checks.
+- CI `secret-scan` checks every commit in the PR, so a secret-like string (for example an AWS-style key in a test fixture) fails it even if a later commit removes it. There is no allowlist; build such strings at runtime from parts, as the canary in `.github/workflows/ci.yml` does.
+
+<!-- /bmad:context -->
