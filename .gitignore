@@ -1,6 +1,5 @@
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
@@ -117,3 +116,26 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+# --- Agent factory (copied from price-checker) ---
+# Secrets and Terraform state (S-10, CR-11)
+.env
+.env.*
+*.tfstate*
+*.tfvars
+
+# OS and Python caches
+.DS_Store
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Orchestrator run state and per-worktree scratch (spine AD-9)
+.sdlc/
+_bmad-output/sdlc/
+
+.idea/
+
+# IDE and personal BMAD settings
+*.iml
+_bmad/config.user.toml
