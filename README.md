@@ -1,6 +1,6 @@
-# dopify
+# simian
 
-Built in the `simian` repo by a BMAD agent team and Zamolxe (Orchestrator), copied from price-checker (`docs/agent-team-reuse.md`).
+Built by a BMAD agent team and Zamolxe (Orchestrator), copied from price-checker (`docs/agent-team-reuse.md`).
 
 ## Status
 
